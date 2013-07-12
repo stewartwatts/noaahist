@@ -57,15 +57,19 @@ For simple calls, pass command line arguments:
 * -o, --outfile: redirect comma-separated output lines (defaults to stdout)
 
 Example:
-    $ ./noaahist.py -d 19710321 19710323 -z 89109 --lats 34.05 34.893 --lons -118.25 -117.019 -f SPD TEMP -p --outfile fllv.txt
+```
+$ ./noaahist.py -d 19710321 19710323 -z 89109 --lats 34.05 34.893 --lons -118.25 -117.019 -f SPD TEMP -p --outfile fllv.txt
+```
 
 For more complicated calls or for requests with different date ranges or many different locations, pass a pipe-delimited, formatted text file that specifies one request per line.  If the frequency is not 'h' or 'H', observation frequency will default to daily.  
 
 location name | date OR start_date,end_date | zip or latitude,longitude | comma-separated weather fields | daily ('d') OR hourly ('h')
 
 Example:
-    $ echo 'LasVegas|19710321,19710323|89109|SKC,TEMP|d' > reqs.txt
-    $ echo 'WoodyCreek_CO|20050220|39.270833,-106.886111|SPD,SD|h' >> reqs.txt
-    $ ./noaahist.py --infile reqs.txt
+```
+$ echo 'LasVegas|19710321,19710323|89109|SKC,TEMP|d' > reqs.txt
+$ echo 'WoodyCreek_CO|20050220|39.270833,-106.886111|SPD,SD|h' >> reqs.txt
+$ ./noaahist.py --infile reqs.txt
+```
 
 Note: location name is just for convenient grouping of results when responses are dumped together in .csv format.  It does not affect what data is pulled from NOAA.

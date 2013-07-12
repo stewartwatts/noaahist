@@ -238,14 +238,18 @@ def lons_action():
             setattr(args, self.dest, values)
     return LonArgsAction
 
-def wkey_action(weather_keys):
-    class WkeyArgsAction(argparse.Action):
+def flds_action():
+    class FldsArgsAction(argparse.Action):
         def __call__(self, parser, args, values, option_string=None):
-            if any(val not in weather_keys for val in values):
-                msg = '"lons" longitude floats must be in range [-180., 180.]'
+            good_flds = ['AW3', 'AW4', 'W', 'MIN', 'HR', 'H', 'PCP24', 'CLG', 'M', 'L', 'AW1', 'AW2',
+                         'GUS', 'STP', 'SKC', 'ALT', 'DIR', 'MW3', 'MW2', 'MW1', 'TEMP', 'MW4', 'MAX',
+                         'MN', 'PCP06', 'DEWP', 'VSB', 'PCP01', 'PCPXX', 'SLP', 'SPD', 'SD']
+            if any(val not in good_flds for val in values):
+                wrong_keys = [val for val in values if val not in good_flds]
+                msg = 'weather keys not recognized:', wrong_keys
                 raise argparse.ArgumentTypeError(msg)
             setattr(args, self.dest, values)
-    return WkeyArgsAction
+    return FldsArgsAction
 
 ## General helper functions 
 def datestr_to_dt(datestr):
@@ -393,7 +397,7 @@ if __name__ == "__main__":
                         help='one or more latitudes')
     parser.add_argument('--lons', nargs='+', action=lons_action(), type=float,
                         help='one or more longitudes (in same order as latitudes if multiple)')
-    parser.add_argument('-f', '--flds', nargs='+',
+    parser.add_argument('-f', '--flds', nargs='+', action=flds_action(),
                         help='weather data field names (see README.md or NOAA_fields in WeatherDataRequest definition)')
     parser.add_argument('--hrly', action='store_true',
                         help='return data with hourly frequency instead of daily')

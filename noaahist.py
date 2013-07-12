@@ -2,9 +2,7 @@
 
 import os
 import sys
-import re
 import datetime as dt
-from traceback import print_exc
 from copy import copy
 from collections import defaultdict
 from calendar import monthrange
@@ -130,7 +128,6 @@ class WeatherDataRequest(object):
                                 try:
                                     hrline[fld] = self.to_float(obs[self.NOAA_fields[fld][0]:self.NOAA_fields[fld][1]])
                                 except :
-                                    print_exc()
                                     hrline[fld] = None
                             self.response.append(hrline)
                     # daily: average observations or extract non-'***' data

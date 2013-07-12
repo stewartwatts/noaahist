@@ -2,10 +2,6 @@
 *
 *  Produce simplified form from ISH file.
 * 
-*         ** MODIFIED FROM NOAA'S STANDARD REFORMATTING CODE **
-*            --> INPUT: STDIN    OUTPUT: STDOUT    (instead of infile and outfile args)
-*            --> LOGGING DISABLED
-*
 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 * Date:       Developer  PR/CR #   Description of changes
 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -19,6 +15,16 @@
 *                                  Type code is 'V'
 *                                  Added MW4 (Manual Present Weather)
 * 
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+*
+* 07/12/2013  srw                  Modified NOAA's standard reformatting script
+*                                  original available at ftp://ftp.ncdc.noaa.gov/pub/data/noaa/ishJava.java
+*                                  --> Disabled NOAA's command line arguments (infile, outfile, logging flags)
+*                                  --> Input: STDIN
+*                                  --> Output: STDOUT    
+*                                  --> Logging disabled
+*                                  --> Removed disabled sections
+*
 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 import java.io.*;
@@ -295,55 +301,6 @@ public class ishJava
 
     public static void main(String[] args)
     {
-//        logIt(fDebug, iPROD, false, "---------------------------- Begin "+sProgramName);          // Append output to log.
-//        logIt(fDebug, iPROD, false, "Number of args found=["+args.length+"]");                    // Append output to log.
-
-// Process args
-/*        if (args.length <= 1)
-        {
-            bStdErr=true;
-            logIt(fDebug, iPROD, false, "Error. Input and Output filenames required.");            // Append output to log.
-            System.exit(77);
-        }
-
-        if (args.length >= 2)
-        {
-            sInFileName     = args[0];
-            sOutFileName    = args[1];
-        }
-
-        if (args.length >= 3)
-        {
-            if (args[2].equals("0") || 
-                args[2].equals("1"))
-            {
-                iLogLevel = Integer.parseInt(args[2]);                      // Safe to convert to int.
-            }
-            else
-            {
-                logIt(fDebug, iPROD, false, "Invalid log message level parameter=["+args[2]+"].  Must be 0 or 1.  Defaulting to ["+iLogLevel+"]");
-            }
-        }
-
-        if (args.length >= 4)
-        {
-            p_sFilter1 = args[3];
-        }
-
-        if (args.length >= 5)
-        {
-            p_sFilter2 = args[4];
-        }
-
-//        sOutFileName  = sInFileName+".java.out";
-
-        logIt(fDebug, iDEBUG, false, "        Input Filename=["+sInFileName+"]");                // Append output to log.
-        logIt(fDebug, iDEBUG, false, "       Output Filename=["+sOutFileName+"]");               // Append output to log.
-        logIt(fDebug, iDEBUG, false, "         Logging Level=["+iLogLevel+"]");                  // Append output to log.
-        logIt(fDebug, iDEBUG, false, "1st Log Message Filter=["+p_sFilter1+"]");
-        logIt(fDebug, iDEBUG, false, "2nd Log Message Filter=["+p_sFilter2+"]");
-// End of args
-*/
         try
         {
             //BufferedReader fInReader        = new BufferedReader(new FileReader(sInFileName));
@@ -363,8 +320,6 @@ public class ishJava
                     iCounter++;
 //                    iOffset         = 25;
                     iLength         = line.length();
-//                    logIt(fDebug, iDEBUG, false, "Record # "+iCounter+" had iLength=["+iLength+"]");
-//                    System.out.println(line);
 
 // See where the REM section begins
                     iREM_IndexOf    = line.indexOf("REM");
@@ -378,28 +333,6 @@ public class ishJava
                     sConcat      = sCDS_ID+"-"+sCDS_Wban+"-"+sCDS_Year+"-"+sCDS_Month+"-"+sCDS_Day+" "+sCDS_Hour+":"+sCDS_Minute;
                     sConcatDate  = sCDS_Year+"-"+sCDS_Month+"-"+sCDS_Day;
                     sConcatMonth = sCDS_Year+"-"+sCDS_Month;
-
-
-// =-=-=-=-=-=-=-=-=-=-=-=-=-= Filter out all but a certain station/date =-=-=-=-=-=-=-=-=-=-=-=-=-=
-//                    if ( (! sConcatDate.equals("2011-01-01")) && (! sConcatDate.equals("2010-01-02")) )
-//                    if ( (! sConcatDate.equals("2012-04-12")) )           // Whole Day
-//                    if ( (! sConcatMonth.equals("2009-04")) )           // Whole month
-//                    {
-//                        continue;
-//                    }
-//
-//                    logIt(fDebug, iDEBUG, false, "line=["+line+"] ");
-//
-//                    logIt(fDebug, iDEBUG, false, "Record # "+iCounter+" had sConcat=["+sConcat+"]");
-//
-//                    if (iCounter >= 100)
-//                    {
-//                        logIt(fDebug, iDEBUG, false, "Max count reached.  Stopping...");
-//                        fFixedWriter.flush();
-//                        fFixedWriter.close();
-//                        System.exit(22);
-//                    }
-// =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= Done =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 
                     getMDS(line);   //  Fields making up the Mandatory Data Section.
@@ -480,14 +413,10 @@ public class ishJava
         } catch (Exception e) {                                                               //Catch exception if any
             sMessage=sProgramName+": Unspecified Exception 1. Error=[" + e.getMessage()+"]";
             bStdErr=true;
-            //logIt(fDebug, iPROD, false, sMessage);         // Append output to log.
             System.err.println(sProgramName+": Stack trace follows:");
             e.printStackTrace();
             System.exit(1);
         }
-
-        //logIt(fDebug, iDEBUG, false, "Processed "+iCounter+" records");
-        //logIt(fDebug, iDEBUG, false, "Done.");
 
     }   // End of main()
 
@@ -571,23 +500,17 @@ public class ishJava
             sMDS_Dir = "990";
         }
 
-//        logIt(fDebug, iDEBUG, false, "sInFileName=["+sInFileName+"] DateTime=["+sConcat+"] sMDS_Dir=["+sMDS_Dir+"] sMDS_DirQ=["+sMDS_DirQ+"] sMDS_DirType=["+sMDS_DirType+"]");     // temporary - ras
-
         if(sMDS_Spd.equals("9999"))
         {    
             sMDS_Spd = "***";
         }
         else
         {
-//                      System.out.println("sMDS=["+sMDS+"] Spd=["+sMDS_Spd+"]");
+
           iWork     = Integer.parseInt(sMDS_Spd);                   // Convert to integer
-//                      System.out.println("iWork=["+iWork+"]");
           iWork     = (int)(((float)iWork / 10.0) * 2.237 + .5);    // Convert Meters Per Second to Miles Per Hour
-//                      System.out.println("iWork=["+iWork+"]");
-//                      sMDS_Spd  = fmt3.format(iWork);
           sMDS_Spd  = formatInt(iWork,3);
-//                      System.out.println("Spd=["+sMDS_Spd+"]");
-//          logIt(fDebug, iDEBUG, false, "sInFileName=["+sInFileName+"] DateTime=["+sConcat+"] sMDS_Spd=["+sMDS_Spd+"]");     // temporary - ras
+
         }
 
         if(sMDS_Clg.equals("99999"))
@@ -602,14 +525,12 @@ public class ishJava
             }
             catch (Exception e)
             {
-                //logIt(fDebug, iDEBUG, false, "sInFileName=["+sInFileName+"] DateTime=["+sConcat+"] sMDS_Clg value could not be converted to integer=["+sMDS_Clg+"]");
                 sMDS_Clg   = "***";                                     // Data error.  Set to missing.
             }
             if( ! sMDS_Clg.equals("***") )
             {
                 iWork     = (int)(((float)iWork * 3.281) / 100.0 + .5);   // Convert Meters to Hundreds of Feet
                 sMDS_Clg  = formatInt(iWork,3);
-//                logIt(fDebug, iDEBUG, false, "sInFileName=["+sInFileName+"] DateTime=["+sConcat+"] sMDS_Clg=["+sMDS_Clg+"]");     // temporary - ras
             }
         }
 
@@ -621,7 +542,6 @@ public class ishJava
         {
             fWork     = Float.parseFloat(sMDS_Vsb);                 // Convert to floating point
             fWork     = ((float)(fWork * (float) 0.000625));                // Convert Meters to Miles using CDO's value
-//            fWork     = ((float)(fWork * (float) 0.000621371192237334));    // Convert Meters to Miles
             fWorkSave = fWork;                                      // Save this value for possible display
             if (fWork > 99.9)
             {
@@ -630,7 +550,6 @@ public class ishJava
 
             if (fWork == (float)10.058125)                          // Match CDO       2011-04-28  ras
             {
-		//logIt(fDebug, iDEBUG, false, "sInFileName=["+sInFileName+"] DateTime=["+sConcat+"] sMDS_Vsb value rounded to 10 miles");
                fWork = (float)10.0;
             }
             sMDS_Vsb = fmt4_1.format(fWork);
@@ -643,7 +562,6 @@ public class ishJava
         }
         else
         {
-//                        System.out.println(sMDS_Temp);
             iWork     = Integer.parseInt(sMDS_Temp);     // Convert to integer
             if (sMDS_TempSign.equals("-"))
             {
@@ -658,7 +576,6 @@ public class ishJava
               iWork = (int)(((float)iWork / 10.0) * 1.8 + 32.0 + .5);
             }
             sMDS_Temp = formatInt(iWork,4);
-//                        System.out.println(sMDS_Temp);
         }
 
         if(sMDS_Dewp.equals("9999"))
@@ -667,7 +584,6 @@ public class ishJava
         }
         else
         {
-//                        System.out.println(sMDS_Dewp);
             iWork     = Integer.parseInt(sMDS_Dewp);     // Convert to integer
             if (sMDS_DewpSign.equals("-"))
             {
@@ -682,7 +598,6 @@ public class ishJava
               iWork = (int)(((float)iWork / 10.0) * 1.8 + 32.0 + .5);
             }
             sMDS_Dewp = formatInt(iWork,4);
-//                        System.out.println(sMDS_Dewp);
         }
 
         if(sMDS_Slp.equals("99999"))
@@ -719,7 +634,6 @@ public class ishJava
             if(sOC1_Gus.equals("9999"))                             // 06/06/2012  ras
             {
                 sOC1_Gus    = "***";
-//                logIt(fDebug, iDEBUG, false, "sInFileName=["+sInFileName+"] DateTime=["+sConcat+"] sOC1_Gus missing=["+sOC1_Gus+"]");     // temporary - ras
             }
             else
             {
@@ -729,14 +643,12 @@ public class ishJava
                 }
                 catch (Exception e)
                 {
-                    //logIt(fDebug, iDEBUG, false, "sInFileName=["+sInFileName+"] DateTime=["+sConcat+"] sOC1_Gus value could not be converted to integer=["+sOC1_Gus+"]");
                     sOC1_Gus = "***";             // Data error.  Set to missing.
                 }
                 if( ! sOC1_Gus.equals("***") )
                 {
                     iWork       = (int)(((float)iWork / 10.0) * 2.237 + .5);    // Convert Meters Per Second to Miles Per Hour
                     sOC1_Gus    = formatInt(iWork,3);
-//                    logIt(fDebug, iDEBUG, false, "sInFileName=["+sInFileName+"] DateTime=["+sConcat+"] sOC1_Gus=["+sOC1_Gus+"]");     // temporary - ras
                 }
             }
         }
@@ -781,14 +693,12 @@ public class ishJava
             }
             else
             {
-//                            System.out.println("DateTime=["+sConcat+"] GF1=["+sGF1+"]  Skc=["+sGF1_Skc+"]");
                 try
                 {
                     iWork       = Integer.parseInt(sGF1_Skc);   // Convert to integer
                 }
                 catch (Exception e)
                 {
-                    //logIt(fDebug, iDEBUG, false, "sInFileName=["+sInFileName+"] DateTime=["+sConcat+"] sGF1_Skc value could not be converted to integer=["+sGF1_Skc+"]");
                     sGF1_Skc   = "***";                                     // Data error.  Set to missing.
                 }
                 if( ! sGF1_Skc.equals("***") )
@@ -847,7 +757,6 @@ public class ishJava
             sMW1_Fill1  = sMW1.substring(1,3);  // 3
             sMW1_Ww     = sMW1.substring(3,5);  // 2
             sMW1_Fill2  = sMW1.substring(5,6);  // 1
-//                        System.out.println("MW1=["+sMW1+"] Ww=["+sMW1_Ww+"]");
         }
     }  // End of getMW1
 
@@ -868,7 +777,6 @@ public class ishJava
             sMW2_Fill1  = sMW2.substring(1,3);  // 3
             sMW2_Ww     = sMW2.substring(3,5);  // 2
             sMW2_Fill2  = sMW2.substring(5,6);  // 1
-//                        System.out.println("MW2=["+sMW2+"] Ww=["+sMW2_Ww+"]");
         }
     }  // End of getMW2
 
@@ -889,7 +797,6 @@ public class ishJava
             sMW3_Fill1  = sMW3.substring(1,3);  // 3
             sMW3_Ww     = sMW3.substring(3,5);  // 2
             sMW3_Fill2  = sMW3.substring(5,6);  // 1
-//                        System.out.println("MW3=["+sMW3+"] Ww=["+sMW3_Ww+"]");
         }
     }  // End of getMW3
 
@@ -910,7 +817,6 @@ public class ishJava
             sMW4_Fill1  = sMW4.substring(1,3);  // 3
             sMW4_Ww     = sMW4.substring(3,5);  // 2
             sMW4_Fill2  = sMW4.substring(5,6);  // 1
-//            logIt(fDebug, iDEBUG, false, "sInFileName=["+sInFileName+"] DateTime=["+sConcat+"] sMW4_Ww=["+sMW4_Ww+"]");     // temporary - ras
         }
     }  // End of getMW4
 
@@ -931,7 +837,6 @@ public class ishJava
             sAY1_Fill1  = sAY1.substring(1,3);  // 3
             sAY1_Pw     = sAY1.substring(3,4);  // 1
             sAY1_Fill2  = sAY1.substring(4,8);  // 4
-//                        System.out.println("AY1=["+sAY1+"] Pw=["+sAY1_Pw+"]");
         }
     }  // End of getAY1
 
@@ -969,7 +874,6 @@ public class ishJava
                 }
                 catch (Exception e)
                 {
-                    //logIt(fDebug, iDEBUG, false, "sInFileName=["+sInFileName+"] DateTime=["+sConcat+"] sMA1_Alt value could not be converted to floating point=["+sMA1_Alt+"]");
                     sMA1_Alt  = "*****";                                      // Data error.  Set to missing.
                 }
                 if( ! sMA1_Alt.equals("*****") )
@@ -991,7 +895,6 @@ public class ishJava
                 }
                 catch (Exception e)
                 {
-                    //logIt(fDebug, iDEBUG, false, "sInFileName=["+sInFileName+"] DateTime=["+sConcat+"] sMA1_Stp value could not be converted to floating point=["+sMA1_Stp+"]");
                     sMA1_Stp  = "******";                                     // Data error.  Set to missing.
                 }
                 if( ! sMA1_Stp.equals("******") )
@@ -1023,7 +926,6 @@ public class ishJava
             sKA1_Code   = sKA1.substring(6,7);   // 1
             sKA1_Temp   = sKA1.substring(7,12);  // 5
             sKA1_Fill2  = sKA1.substring(12,13); // 1
-//                        System.out.println("KA1=["+sKA1+"] Code=["+sKA1_Code+"] Temp=["+sKA1_Temp+"]");
             if(sKA1_Temp.equals("+9999"))
             {
                 sKA1_Temp   = "***";
@@ -1036,7 +938,6 @@ public class ishJava
                 }
                 catch (Exception e)
                 {
-                    //logIt(fDebug, iDEBUG, false, "sInFileName=["+sInFileName+"] DateTime=["+sConcat+"] sKA1_Temp value could not be converted to floating point=["+sKA1_Temp+"]");
                     sKA1_Temp  = "***";                                         // Data error.  Set to missing.
                 }
                 if( ! sKA1_Temp.equals("***") )
@@ -1084,7 +985,6 @@ public class ishJava
             sKA2_Code   = sKA2.substring(6,7);   // 1
             sKA2_Temp   = sKA2.substring(7,12);  // 5
             sKA2_Fill2  = sKA2.substring(12,13); // 1
-//                        System.out.println("KA2=["+sKA2+"] Code=["+sKA2_Code+"] Temp=["+sKA2_Temp+"]");
             if(sKA2_Temp.equals("+9999"))
             {
                 sKA2_Temp   = "***";
@@ -1097,7 +997,6 @@ public class ishJava
                 }
                 catch (Exception e)
                 {
-                    //logIt(fDebug, iDEBUG, false, "sInFileName=["+sInFileName+"] DateTime=["+sConcat+"] sKA2_Temp value could not be converted to floating point=["+sKA2_Temp+"]");
                     sKA2_Temp = "***";             // Data error.  Set to missing.
                 }
                 if( ! sKA2_Temp.equals("***") )
@@ -1147,7 +1046,6 @@ public class ishJava
             sAA1_Pcp    = sAA1.substring(5,9);   // 4
             sAA1_Trace  = sAA1.substring(9,10);  // 1
             sAA1_Fill2  = sAA1.substring(10,11); // 1
-//                        System.out.println("AA1=["+sAA1+"] Pcp=["+sAA1_Pcp+"]");
             if( sAA1_Pcp.equals("9999") )
             {    
                 sAA1_Pcp = "*****";
@@ -1160,7 +1058,6 @@ public class ishJava
                 }
                 catch (Exception e)
                 {
-                    //logIt(fDebug, iDEBUG, false, "sInFileName=["+sInFileName+"] DateTime=["+sConcat+"] AA1_Pcp value could not be converted to floating point=["+sAA1_Pcp+"]");
                     sAA1_Pcp = "*****";             // Data error.  Set to missing.
                 }
                 if( ! sAA1_Pcp.equals("*****") )
@@ -1186,14 +1083,12 @@ public class ishJava
         iAA2_IndexOf    = p_sRecd.indexOf("AA2");
         if ( (iAA2_IndexOf >= 0) && (iAA2_IndexOf < iREM_IndexOf) )
         {
-//                        System.out.println("DateTime=["+sConcat+"] iAA2_IndexOf=["+iAA2_IndexOf+"] iAA2_Length=["+iAA2_Length+"] Line Length=["+iLength+"]");
             sAA2        = p_sRecd.substring(iAA2_IndexOf,iAA2_IndexOf+iAA2_Length);
             sAA2_Fill1  = sAA2.substring(1,3);   // 3
             sAA2_Hours  = sAA2.substring(3,5);   // 2
             sAA2_Pcp    = sAA2.substring(5,9);   // 4
             sAA2_Trace  = sAA2.substring(9,10);  // 1
             sAA2_Fill2  = sAA2.substring(10,11); // 1
-//                        System.out.println("AA2=["+sAA2+"] Pcp=["+sAA2_Pcp+"]");
             if( sAA2_Pcp.equals("9999") )
             {    
                 sAA2_Pcp = "*****";
@@ -1206,7 +1101,6 @@ public class ishJava
                 }
                 catch (Exception e)
                 {
-                    //logIt(fDebug, iDEBUG, false, "sInFileName=["+sInFileName+"] DateTime=["+sConcat+"] AA2_Pcp value could not be converted to floating point=["+sAA2_Pcp+"]");
                     sAA2_Pcp = "*****";             // Data error.  Set to missing.
                 }
                 if( ! sAA2_Pcp.equals("*****") )
@@ -1232,14 +1126,12 @@ public class ishJava
         iAA3_IndexOf    = p_sRecd.indexOf("AA3");
         if ( (iAA3_IndexOf >= 0) && (iAA3_IndexOf < iREM_IndexOf) )
         {
-//                        System.out.println("DateTime=["+sConcat+"] iAA3_IndexOf=["+iAA3_IndexOf+"] iAA3_Length=["+iAA3_Length+"] Line Length=["+iLength+"]");
             sAA3        = p_sRecd.substring(iAA3_IndexOf,iAA3_IndexOf+iAA3_Length);
             sAA3_Fill1  = sAA3.substring(1,3);   // 3
             sAA3_Hours  = sAA3.substring(3,5);   // 2
             sAA3_Pcp    = sAA3.substring(5,9);   // 4
             sAA3_Trace  = sAA3.substring(9,10);  // 1
             sAA3_Fill2  = sAA3.substring(10,11); // 1
-//                        System.out.println("AA3=["+sAA3+"] Pcp=["+sAA3_Pcp+"]");
             if( sAA3_Pcp.equals("9999") )
             {    
                 sAA3_Pcp = "*****";
@@ -1252,7 +1144,6 @@ public class ishJava
                 }
                 catch (Exception e)
                 {
-                    //logIt(fDebug, iPROD, false, "sInFileName=["+sInFileName+"] DateTime=["+sConcat+"] AA3_Pcp value could not be converted to floating point=["+sAA3_Pcp+"]");
                     sAA3_Pcp = "*****";             // Data error.  Set to missing.
                 }
                 if( ! sAA3_Pcp.equals("*****") )
@@ -1278,14 +1169,12 @@ public class ishJava
         iAA4_IndexOf    = p_sRecd.indexOf("AA4");
         if ( (iAA4_IndexOf >= 0) && (iAA4_IndexOf < iREM_IndexOf) )
         {
-//                        System.out.println("DateTime=["+sConcat+"] iAA4_IndexOf=["+iAA4_IndexOf+"] iAA4_Length=["+iAA4_Length+"] Line Length=["+iLength+"]");
             sAA4        = p_sRecd.substring(iAA4_IndexOf,iAA4_IndexOf+iAA4_Length);
             sAA4_Fill1  = sAA4.substring(1,3);   // 3
             sAA4_Hours  = sAA4.substring(3,5);   // 2
             sAA4_Pcp    = sAA4.substring(5,9);   // 4
             sAA4_Trace  = sAA4.substring(9,10);  // 1
             sAA4_Fill2  = sAA4.substring(10,11); // 1
-//                        System.out.println("AA4=["+sAA4+"] Pcp=["+sAA4_Pcp+"]");
             if( sAA4_Pcp.equals("9999") )
             {    
                 sAA4_Pcp = "*****";
@@ -1298,7 +1187,6 @@ public class ishJava
                 }
                 catch (Exception e)
                 {
-                    //logIt(fDebug, iDEBUG, false, "sInFileName=["+sInFileName+"] DateTime=["+sConcat+"] AA4_Pcp value could not be converted to floating point=["+sAA4_Pcp+"]");
                     sAA4_Pcp = "*****";             // Data error.  Set to missing.
                 }
                 if( ! sAA4_Pcp.equals("*****") )
@@ -1377,7 +1265,6 @@ public class ishJava
             sAJ1_Fill1  = sAJ1.substring(1,3);  // 3
             sAJ1_Sd     = sAJ1.substring(3,7);  // 4
             sAJ1_Fill2  = sAJ1.substring(7,17); // 10
-//                        System.out.println("AJ1_Fill1=["+sAJ1_Fill1+"] Sd=["+sAJ1_Sd+"]");
             if( sAJ1_Sd.equals("9999") )
             {
                 sAJ1_Sd         = "**";
@@ -1390,7 +1277,6 @@ public class ishJava
               }
               catch (Exception e)
               {
-                  //logIt(fDebug, iDEBUG, false, "sInFileName=["+sInFileName+"] DateTime=["+sConcat+"] sAJ1_Sd value could not be converted to floating point=["+sAJ1_Sd+"]");
                   sAJ1_Sd   = "**";             // Data error.  Set to missing.
               }
               if( ! sAJ1_Sd.equals("**") )
@@ -1420,7 +1306,6 @@ public class ishJava
             sAW1_Fill1  = sAW1.substring(1,3);  // 3
             sAW1_Zz     = sAW1.substring(3,5);  // 2
             sAW1_Fill2  = sAW1.substring(5,6);  // 1
-//            logIt(fDebug, iDEBUG, false, "sInFileName=["+sInFileName+"] DateTime=["+sConcat+"] sAW1_Zz=["+sAW1_Zz+"]");     // temporary - ras
         }
     }  // End of getAW1
 
@@ -1441,7 +1326,6 @@ public class ishJava
             sAW2_Fill1  = sAW2.substring(1,3);  // 3
             sAW2_Zz     = sAW2.substring(3,5);  // 2
             sAW2_Fill2  = sAW2.substring(5,6);  // 1
-//            logIt(fDebug, iDEBUG, false, "sInFileName=["+sInFileName+"] DateTime=["+sConcat+"] sAW2_Zz=["+sAW2_Zz+"]");     // temporary - ras
         }
     }  // End of getAW2
 
@@ -1462,7 +1346,6 @@ public class ishJava
             sAW3_Fill1  = sAW3.substring(1,3);  // 3
             sAW3_Zz     = sAW3.substring(3,5);  // 2
             sAW3_Fill2  = sAW3.substring(5,6);  // 1
-//            logIt(fDebug, iDEBUG, false, "sInFileName=["+sInFileName+"] DateTime=["+sConcat+"] sAW3_Zz=["+sAW3_Zz+"]");     // temporary - ras
         }
     }  // End of getAW3
 
@@ -1483,76 +1366,6 @@ public class ishJava
             sAW4_Fill1  = sAW4.substring(1,3);  // 3
             sAW4_Zz     = sAW4.substring(3,5);  // 2
             sAW4_Fill2  = sAW4.substring(5,6);  // 1
-//          logIt(fDebug, iDEBUG, false, "sInFileName=["+sInFileName+"] DateTime=["+sConcat+"] sAW4_Zz=["+sAW4_Zz+"]");     // temporary - ras
         }
     }  // End of getAW4
-
-
-//=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-// logIt - Append records to the log file.
-//=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-/*    public static int logIt(FileOutputStream p_fDebug, int p_iLogLevel, boolean p_bFilter, String p_sIn)
-    {
-        int iRetCode=99;                                        // Set default return code to something crazy.
-        String sMessageFormatted="";
-
-        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        Date now = new Date();
-        sMessageFormatted=sProgramName+": "+format.format(now)+"_"+p_sIn;
-
-        if (bStdErr)
-        {
-            System.err.println(sMessageFormatted);              // Error   mode will echo message to standard error
-        }
-
-        if (bVerbose)
-        {
-            System.out.println(sMessageFormatted);              // Verbose mode will echo message to screen
-        }
-
-        if (iLogLevel < p_iLogLevel)                            // 04/01/2009  ras
-        {
-            return 0;                                           // No logging for this
-        }
-
-        if (p_bFilter)                                          // 04/01/2009  ras
-        {
-            if  (p_sFilter1.equals("None"))                     // 04/01/2009  ras
-            {
-            }
-            else
-            {
-                if  (sConcat.equals(p_sFilter1)  ||             // 04/01/2009  ras    // Life is good
-                     sConcat.equals(p_sFilter2))
-                {
-                }
-                else
-                {
-                    return 0;                                   // 04/01/2009  ras    // No logging for this
-                }
-            }
-        }
-	
-        try {
-            p_fDebug = new FileOutputStream (sDebugName+".debug", true);                // Append mode.
-            new PrintStream(p_fDebug).println (format.format(now)+"_"+p_sIn);           // Write output to debug log.
-            iRetCode=0;                                                                 // Good.
-            p_fDebug.close();
-        }
-        catch (IOException e) {
-            System.out.println("5. Unable to open debug log");
-            System.err.println(sProgramName+": Stack trace follows:");
-            e.printStackTrace();
-            System.exit(5);
-        }
-        catch (Exception e) {
-            iRetCode=6;                                                                 // An error occurred.
-            System.err.println(sProgramName+": Unspecified Exception in logIt. Error=[" + e.getMessage()+"]");
-            System.err.println(sProgramName+": Stack trace follows:");
-            e.printStackTrace();
-            System.exit(6);
-        }
-        return iRetCode;
-    }  // End of logIt
-*/
 }

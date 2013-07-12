@@ -14,6 +14,13 @@ from subprocess import Popen, PIPE
 from math import radians, cos, sin, asin, sqrt
 
 ## Logic for handling data requests and outputting a response
+
+# multiprocessing PickleError workaround
+def run_req((req, stns)):
+    req.get_stns_by_date(stns)
+    req.get_response()
+    return req.response
+
 class WeatherDataRequest(object):
     def __init__(self, start_date, end_date, lat, lon, flds, freq, name=None):
         ndays = (end_date-start_date).days
@@ -103,6 +110,7 @@ class WeatherDataRequest(object):
                 p2 = Popen(["gunzip"], stdin=p1.stdout, stdout=PIPE)
                 p3 = Popen(['java', '-classpath', 'static', 'ishJava'], stdin=p2.stdout, stdout=PIPE)
                 data = p3.communicate()[0].split("\n")[1:-1]
+                print '\n'
                 # filter out unneeded data
                 data = [x for x in data if datestr_to_dt(x[13:21]) in stndates]
                 
@@ -361,8 +369,9 @@ def main(args, update_stations=True):
         nprocs = args.nprocs
     if nprocs:
         # make requests in parallel
+        print "making requests in parallel on < %s > processors" % str(nprocs)
         pool = Pool(processes=nprocs)
-        result = pool.map_async(lambda r: r.run(stns), reqs)
+        result = pool.map_async(run_req, [[req, stns] for req in reqs])
         resps = result.get()
     else:
         # make requests in series

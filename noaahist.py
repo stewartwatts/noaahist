@@ -310,7 +310,7 @@ def main(args, update_stations=True):
     """
     - optionally refresh NOAA stations coverage metadata
     - if locations and fields were passed on the command line, create WeatherDataRequests from them
-    - if infile specifying requests was passed inhe command line, create a WeatherDataRequest from each line
+    - if infile specifying requests was passed on the command line, create a WeatherDataRequest from each line
     - run all WeatherDataRequests and dump output of resulting AllWeatherResponses
     """
     reqs, resps = [], []

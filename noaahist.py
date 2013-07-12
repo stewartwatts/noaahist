@@ -171,7 +171,7 @@ class AllWeatherResponses(object):
         self.lines = [','.join(self.fld_names) + "\n"]
         
     def format_line(self, obs_dict):
-        return ",".join([str(obs_dict[fld]) if obs_dict.get(fld) is not None else '' for fld in self.fld_names]) + "\n"
+        return ",".join(map(lambda x: str(round(x,2)) if type(x)==float else str(x), [obs_dict[fld] if obs_dict.get(fld) is not None else '' for fld in self.fld_names])) + "\n"
     
     def write(self, dest):
         for resp in self.responses:

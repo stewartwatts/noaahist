@@ -7,7 +7,7 @@ Python API to get historical data from the NOAA weather station nearest a zip co
 ## DATA SOURCE 
 ftp://ftp.ncdc.noaa.gov/pub/data/noaa/  
 
-## FIELDS:
+## FIELDS
 * 'DIR':   WIND DIRECTION IN COMPASS DEGREES, 990 = VARIABLE, REPORTED AS '***' WHEN AIR IS CALM (SPD WILL THEN BE 000)
 * 'SPD':   WIND SPEED IN MILES PER HOUR 
 * 'GUS':   GUST IN MILES PER HOUR 
@@ -64,8 +64,8 @@ For more complicated calls or for requests with different date ranges or many di
 location name | date OR start_date,end_date | zip or latitude,longitude | comma-separated weather fields | daily ('d') OR hourly ('h')
 
 Example:
-`$ echo 'LasVegas|19710321,19710323|89109|SKC,TEMP|d' > reqs.txt
+```$ echo 'LasVegas|19710321,19710323|89109|SKC,TEMP|d' > reqs.txt
 $ echo 'WoodyCreek_CO|20050220|39.270833,-106.886111|SPD,SD|h' >> reqs.txt
-$ ./noaahist.py --infile reqs.txt`
+$ ./noaahist.py --infile reqs.txt```
 
 Note: location name is just for convenient grouping of results when responses are dumped together in .csv format.  It does not affect what data is pulled from NOAA.

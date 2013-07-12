@@ -144,10 +144,11 @@ class WeatherDataRequest(object):
                                     pass
                         for fld in tmp:
                             try:
-                                line[fld] = float(sum(tmp[fld]))/len(tmp)
+                                line[fld] = sum(tmp[fld])/len(tmp[fld])
                             except:
                                 line[fld] = None
                         self.response.append(line)
+        self.response = sorted(self.response, key=lambda r: r['DATE'])
                     
     def run(self, stns):
         self.get_stns_by_date(stns)
@@ -306,7 +307,7 @@ def coords_from_zip(zipcode):
     zc = zcdb[int(zipcode)]
     return zc.latitude, zc.longitude
 
-def main(args, update_stations=True):
+def main(args, update_stations=False):
     """
     - optionally refresh NOAA stations coverage metadata
     - if locations and fields were passed on the command line, create WeatherDataRequests from them

@@ -92,7 +92,7 @@ class WeatherDataRequest(object):
         try:
             return float(x)
         except:
-            return x
+            return x if '*' not in x else ''
 
     def get_response(self):
         self.response = []

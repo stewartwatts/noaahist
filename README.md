@@ -1,13 +1,13 @@
-## OVERVIEW 
+#### OVERVIEW 
 Python API to get historical data from the NOAA weather station nearest a zip code or latitude and longitude coordinates. 
 
-## DEPENDENCIES 
+#### DEPENDENCIES 
 *NIX curl, gunzip, Java Runtime Environment, pyzipcode (if you pass zip codes instead of longitude,latitude)
 
-## DATA SOURCE 
+#### DATA SOURCE 
 ftp://ftp.ncdc.noaa.gov/pub/data/noaa/  
 
-## FIELDS
+#### FIELDS
 * 'DIR':   WIND DIRECTION IN COMPASS DEGREES, 990 = VARIABLE, REPORTED AS '***' WHEN AIR IS CALM (SPD WILL THEN BE 000)
 * 'SPD':   WIND SPEED IN MILES PER HOUR 
 * 'GUS':   GUST IN MILES PER HOUR 
@@ -39,10 +39,10 @@ ftp://ftp.ncdc.noaa.gov/pub/data/noaa/
 * 'SD':    SNOW DEPTH IN INCHES
 * NOTE: *'s IN OUTPUT INDICATES FIELD NOT REPORTED
 
-## REFORMATTING 
+#### REFORMATTING 
 NOAA's raw files have some fixed fields and a richer set of fields with variable and complicated formatting.  NOAA provides a reformatting routine which has been modified (static/ishJava.java) to work in a pipeline.  This modified code is ready-compiled (static/ishJava.class), so this API depends on a Java Runtime Environment, but not necessarily a Java compiler.
 
-## USAGE
+#### USAGE
 For simple calls, pass command line arguments:
 
 * -d, --date: a single date or a start date and end date in YYYYMMDD format
@@ -57,15 +57,15 @@ For simple calls, pass command line arguments:
 * -o, --outfile: redirect comma-separated output lines (defaults to stdout)
 
 Example:
-`$ ./noaahist.py -d 19710321 19710323 -z 89109 --lats 34.05 34.893 --lons -118.25 -117.019 -f SPD TEMP -p --outfile fllv.txt`
+    $ ./noaahist.py -d 19710321 19710323 -z 89109 --lats 34.05 34.893 --lons -118.25 -117.019 -f SPD TEMP -p --outfile fllv.txt
 
 For more complicated calls or for requests with different date ranges or many different locations, pass a pipe-delimited, formatted text file that specifies one request per line.  If the frequency is not 'h' or 'H', observation frequency will default to daily.  
 
 location name | date OR start_date,end_date | zip or latitude,longitude | comma-separated weather fields | daily ('d') OR hourly ('h')
 
 Example:
-```$ echo 'LasVegas|19710321,19710323|89109|SKC,TEMP|d' > reqs.txt
-$ echo 'WoodyCreek_CO|20050220|39.270833,-106.886111|SPD,SD|h' >> reqs.txt
-$ ./noaahist.py --infile reqs.txt```
+    $ echo 'LasVegas|19710321,19710323|89109|SKC,TEMP|d' > reqs.txt
+    $ echo 'WoodyCreek_CO|20050220|39.270833,-106.886111|SPD,SD|h' >> reqs.txt
+    $ ./noaahist.py --infile reqs.txt
 
 Note: location name is just for convenient grouping of results when responses are dumped together in .csv format.  It does not affect what data is pulled from NOAA.

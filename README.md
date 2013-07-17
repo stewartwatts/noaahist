@@ -2,7 +2,7 @@
 Python API to get historical data from the NOAA weather station nearest a zip code or latitude and longitude coordinates. 
 
 #### DEPENDENCIES 
-*NIX curl, gunzip, Java Runtime Environment, pyzipcode (if you pass zip codes instead of latitude,longitude)
+*NIX curl, gunzip, Java Runtime Environment / compiler, pyzipcode (if you pass zip codes instead of latitude,longitude)
 
 #### DATA SOURCE 
 ftp://ftp.ncdc.noaa.gov/pub/data/noaa/  
@@ -43,6 +43,13 @@ ftp://ftp.ncdc.noaa.gov/pub/data/noaa/
 NOAA's raw files have some fixed fields and a richer set of fields with variable and complicated formatting.  NOAA provides a reformatting routine which has been modified (static/ishJava.java) to work in a pipeline.  This modified code is ready-compiled (static/ishJava.class), so this API depends on a Java Runtime Environment, but not necessarily a Java compiler.
 
 #### USAGE
+Before using this tool, you must compile static/ishJava.java to create static/ishJava.class.  Your ishJava.class compiled file must be in static/ for noaahist.py to find it, so 'cd' into static/ before compiling ishJava.java.
+
+```
+$ cd static
+$ javac ishJava.java
+```
+
 For simple calls, pass command line arguments:
 
 * -d, --date: a single date or a start date and end date in YYYYMMDD format

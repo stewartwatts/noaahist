@@ -43,7 +43,7 @@ ftp://ftp.ncdc.noaa.gov/pub/data/noaa/
 NOAA's raw files have some fixed fields and a richer set of fields with variable and complicated formatting.  NOAA provides a reformatting routine which has been modified (static/ishJava.java) to work in a pipeline.  This modified code is ready-compiled (static/ishJava.class), so this API depends on a Java Runtime Environment, but not necessarily a Java compiler.
 
 #### USAGE
-Before using this tool, you must compile static/ishJava.java.  The Java binary file you create file must be in static/ for noaahist.py to find it, so 'cd' into static/ first.
+Before using this tool, you must compile static/ishJava.java.  The Java binary file you create, ishJava.class, must be in static/ for noaahist.py to find it, so 'cd' into static/ first.
 
 ```
 $ cd static

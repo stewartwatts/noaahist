@@ -1,48 +1,47 @@
-#### OVERVIEW 
+##### OVERVIEW 
 Python API to get historical data from the NOAA weather station nearest a zip code or latitude and longitude coordinates. 
 
-#### DEPENDENCIES 
+##### DEPENDENCIES 
 *NIX curl, gunzip, Java Runtime Environment / compiler, pyzipcode (if you pass zip codes instead of latitude,longitude)
 
-#### DATA SOURCE 
+##### DATA SOURCE 
 ftp://ftp.ncdc.noaa.gov/pub/data/noaa/  
 
-#### FIELDS
-* 'DIR':   WIND DIRECTION IN COMPASS DEGREES, 990 = VARIABLE, REPORTED AS '***' WHEN AIR IS CALM (SPD WILL THEN BE 000)
-* 'SPD':   WIND SPEED IN MILES PER HOUR 
-* 'GUS':   GUST IN MILES PER HOUR 
-* 'CLG':   CLOUD CEILING--LOWEST OPAQUE LAYER WITH 5/8 OR GREATER COVERAGE, IN HUNDREDS OF FEET, 722 = UNLIMITED 
-* 'SKC':   SKY COVER -- CLR-CLEAR, SCT-SCATTERED-1/8 TO 4/8, BKN-BROKEN-5/8 TO 7/8, OVC-OVERCAST, OBS-OBSCURED, POB-PARTIAL OBSCURATION
-* 'L':     MEDIUM CLOUD TYPE
-* 'H':     HIGH CLOUD TYPE
-* 'VSB':   VISIBILITY IN STATUTE MILES TO NEAREST TENTH
-* 'MW1':   MANUALLY OBSERVED PRESENT WEATHER (see ftp://ftp.ncdc.noaa.gov/pub/data/noaa/ish-abbreviated.txt for detail)
+##### FIELDS
+* 'DIR':   wind direction in compass degrees, 990 = variable, reported as '***' when air is calm (spd will then be 000)
+* 'SPD':   wind speed in miles per hour 
+* 'GUS':   gust in miles per hour 
+* 'CLG':   cloud ceiling--lowest opaque layer with 5/8 or greater coverage, in hundreds of feet, 722 = unlimited 
+* 'SKC':   sky cover -- clr-clear, sct-scattered-1/8 to 4/8, bkn-broken-5/8 to 7/8, ovc-overcast, obs-obscured, pob-partial obscuration
+* 'L':     medium cloud type
+* 'H':     high cloud type
+* 'VSB':   visibility in statute miles to nearest tenth
+* 'MW1':   manually observed present weather (see ftp://ftp.ncdc.noaa.gov/pub/data/noaa/ish-abbreviated.txt for detail)
 * 'MW2': 
 * 'MW3': 
 * 'MW4': 
-* 'AW1':   AUTO-OBSERVED PRESENT WEATHER (see ftp://ftp.ncdc.noaa.gov/pub/data/noaa/ish-abbreviated.txt for detail)
+* 'AW1':   auto-observed present weather (see ftp://ftp.ncdc.noaa.gov/pub/data/noaa/ish-abbreviated.txt for detail)
 * 'AW2': 
 * 'AW3': 
 * 'AW4': 
-* 'W':     PAST WEATHER INDICATOR
-* 'TEMP':  TEMPERATURE IN FARENHEIT
-* 'DEWP':  DEWPOINT IN FARENHEIT
-* 'SLP':   SEA LEVEL PRESSURE IN MILLIBARS TO NEAREST TENTH
-* 'ALT':   ALTIMETER SETTING IN INCHES TO NEAREST HUNDREDTH
-* 'STP':   STATION PRESSURE IN MILLIBARS TO NEAREST TENTH
-* 'MAX':   MAXIMUM TEMPERATURE IN FAHRENHEIT (TIME PERIOD VARIES)
-* 'MIN':   MINIMUM TEMPERATURE IN FAHRENHEIT (TIME PERIOD VARIES)
-* 'PCP01': 1-HOUR LIQUID PRECIP REPORT IN INCHES AND HUNDREDTHS -- THAT IS, THE PRECIP FOR THE PRECEDING 1 HOUR PERIOD
-* 'PCP06': 6-HOUR LIQUID PRECIP REPORT IN INCHES AND HUNDREDTHS -- THAT IS, THE PRECIP FOR THE PRECEDING 6 HOUR PERIOD
-* 'PCP24': 24-HOUR LIQUID PRECIP REPORT IN INCHES AND HUNDREDTHS -- THAT IS, THE PRECIP FOR THE PRECEDING 24 HOUR PERIOD
-* 'PCPXX': LIQUID PRECIP REPORT IN INCHES AND HUNDREDTHS, FOR A PERIOD OTHER THAN 1, 6, OR 24 HOURS (USUALLY FOR 12 HOUR PERIOD FOR STATIONS OUTSIDE THE U.S., AND FOR 3 HOUR PERIOD FOR THE U.S.) T = TRACE FOR ANY PRECIP FIELD
-* 'SD':    SNOW DEPTH IN INCHES
-* NOTE: *'s IN OUTPUT INDICATES FIELD NOT REPORTED
+* 'W':     past weather indicator
+* 'TEMP':  temperature in Farenheit
+* 'DEWP':  dewpoint in Farenheit
+* 'SLP':   sea level pressure in millibars to nearest tenth
+* 'ALT':   altimeter setting in inches to nearest hundredth
+* 'STP':   station pressure in millibars to nearest tenth
+* 'MAX':   maximum temperature in Fahrenheit (time period varies)
+* 'MIN':   minimum temperature in Fahrenheit (time period varies)
+* 'PCP01': 1-hour liquid precip report in inches and hundredths -- that is, the precip for the preceding 1 hour period
+* 'PCP06': 6-hour liquid precip report in inches and hundredths -- that is, the precip for the preceding 6 hour period
+* 'PCP24': 24-hour liquid precip report in inches and hundredths -- that is, the precip for the preceding 24 hour period
+* 'PCPXX': liquid precip report in inches and hundredths, for a period other than 1, 6, or 24 hours (usually for 12 hour period for stations outside the u.s., and for 3 hour period for the u.s.) t = trace for any precip field
+* 'SD':    snow depth in inches
 
-#### REFORMATTING 
+##### REFORMATTING 
 NOAA's raw files have some fixed fields and a richer set of fields with variable and complicated formatting.  NOAA provides a reformatting routine which has been modified (static/ishJava.java) to work in a pipeline.  This modified code is ready-compiled (static/ishJava.class), so this API depends on a Java Runtime Environment, but not necessarily a Java compiler.
 
-#### USAGE
+##### USAGE
 Before using this tool, you must compile static/ishJava.java.  The Java binary file you create, ishJava.class, must be in static/ for noaahist.py to find it, so 'cd' into static/ first.
 
 ```

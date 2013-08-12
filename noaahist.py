@@ -14,7 +14,7 @@ from math import radians, cos, sin, asin, sqrt
 ## Logic for handling data requests and outputting a response
 
 # multiprocessing PickleError workaround
-def run_req((req, stns)):
+def run_req((req, stns, flds_by_stn)):
     req.get_stns_by_date(stns)
     req.get_response()
     return req.response
@@ -298,6 +298,18 @@ def stn_covg(path='static/ISH-HISTORY.TXT'):
     stns = {'-'.join([line[0:6], line[7:12]]): parse_stn_line(line) for line in map(lambda x: x.strip(), open(path).readlines())}
     return {key: stns[key] for key in stns if stns[key]}
 
+def stn_flds(path='static/stn_flds.txt'):
+    lines = map(lambda x: x.strip(), open(path).readlines())
+    flds = lines[0].split(',')[1:]
+    out = {}
+    for line in lines[1:]:
+        data = map(int, line.split(',')[1:])
+        _id = line.split(',')[0]
+        out[_id] = {}
+        for i in range(len(flds)):
+            out[_id][flds[i]] = data[i]
+    return out
+
 def coords_from_zip(zipcode):
     from pyzipcode import ZipCodeDatabase
     zcdb = ZipCodeDatabase()
@@ -360,8 +372,9 @@ def main(args, update_stations=False):
         for line in map(lambda x: x.strip(), args.infile.readlines()):
             reqs.append(req_from_infile_line(line))
 
-    # Get station coverage data
+    # Get station coverage data and flds coverage
     stns = stn_covg()
+    flds_by_stn = stn_flds()
 
     # Make requests
     nprocs = None
@@ -373,7 +386,7 @@ def main(args, update_stations=False):
         # make requests in parallel
         print "making requests in parallel on < %s > processors" % str(nprocs)
         pool = Pool(processes=nprocs)
-        result = pool.map_async(run_req, [[req, stns] for req in reqs])
+        result = pool.map_async(run_req, [(req, stns, flds_by_stn) for req in reqs])
         resps = result.get()
     else:
         # make requests in series

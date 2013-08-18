@@ -2,6 +2,7 @@
 
 import os
 import sys
+import time
 import datetime as dt
 from copy import copy
 from collections import defaultdict
@@ -324,9 +325,10 @@ def main(args, update_stations=False):
     - run all WeatherDataRequests and dump output of resulting AllWeatherResponses
     """
     reqs, resps = [], []
-    if update_stations:
+    stns_path = 'static/ISH-HISTORY.TXT'
+    # update if arg is True, or file doesn't exist, or over 180 days stale
+    if update_stations or not os.path.exists(stns_path) or (time.time() - os.path.getmtime(stns_path)) > 180 * 24 * 60 * 60:
         stns_url = 'ftp://ftp.ncdc.noaa.gov/pub/data/inventories/ISH-HISTORY.TXT'
-        stns_path = 'static/ISH-HISTORY.TXT'
         print "Downloading NOAA stations list to %s ..." % stns_path
         with open(stns_path, "w") as f:
             p1 = Popen(["curl", stns_url], stdout=PIPE)

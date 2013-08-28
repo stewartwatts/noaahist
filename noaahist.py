@@ -15,13 +15,12 @@ from math import radians, cos, sin, asin, sqrt
 ## Logic for handling data requests and outputting a response
 
 # multiprocessing PickleError workaround
-def run_req((req, stns, flds_by_stn)):
-    req.get_stns_by_date(stns)
+def run_req((req)):
     req.get_response()
     return req.response
 
 class WeatherDataRequest(object):
-    def __init__(self, start_date, end_date, lat, lon, flds, freq, name=None):
+    def __init__(self, start_date, end_date, lat, lon, flds, freq, stns, name=None):
         ndays = (end_date-start_date).days
         self.dates = {date: None for date in [end_date - dt.timedelta(days=n) for n in range(ndays,-1,-1)]}
         self.lat = float(lat)
@@ -66,8 +65,8 @@ class WeatherDataRequest(object):
             'PCPXX': [139,144], # LIQUID PRECIP REPORT IN INCHES AND HUNDREDTHS, FOR A PERIOD OTHER THAN 1, 6, OR 24 HOURS (USUALLY FOR 12 HOUR PERIOD FOR STATIONS OUTSIDE THE U.S., AND FOR 3 HOUR PERIOD FOR THE U.S.) T = TRACE FOR ANY PRECIP FIELD
             'SD':    [145,147], # SNOW DEPTH IN INCHES
             }
+        self.stns = stns
 
-    def get_stns_by_date(self, stns):
         # get mapping of date to closest station with data, by month
         yr, mo, cands, usafid, actual_ids = None, None, [], None, []
         for d in self.dates:
@@ -80,7 +79,7 @@ class WeatherDataRequest(object):
                     p2 = Popen(['grep','-o','[0-9]\{6\}-[0-9]\{5\}'], stdin=p1.stdout, stdout=PIPE)
                     actual_ids = p2.communicate()[0].split("\n")[:-1]
                 mo = d.month
-                cands = [_id for _id in stns if stns[_id]['sd'] < dt.date(yr,mo,1) and stns[_id]['ed'] > dt.date(yr,mo,monthrange(yr,mo)[1]) and _id in actual_ids]
+                cands = [_id for _id in self.stns if self.stns[_id]['sd'] < dt.date(yr,mo,1) and self.stns[_id]['ed'] > dt.date(yr,mo,monthrange(yr,mo)[1]) and _id in actual_ids]
                 # get closest station for this month
                 sort_cands = sorted(cands, key=lambda cand: haversine(self.lat, self.lon, stns[cand]['lat'], stns[cand]['lon']))
                 _id = sort_cands[0]   # TODO: for additional fields, verify the station usually has this data
@@ -148,8 +147,7 @@ class WeatherDataRequest(object):
                         self.response.append(line)
         self.response = sorted(self.response, key=lambda r: r['DATE'])
                     
-    def run(self, stns):
-        self.get_stns_by_date(stns)
+    def run(self):
         self.get_response()
         return self.response
     
@@ -289,12 +287,9 @@ def req_from_infile_line(line):
     return WeatherDataRequest(sd, ed, lat, lon, flds, 'h' if freq[0].lower()=='h' else 'd', name)
 
 def parse_stn_line(line):
-    try:
-        return dict(usafid_wban='-'.join([line[0:6], line[7:12]]), name=line[13:43], state=line[49:51], lat=float(line[58:64])/1000.,
-                    lon=float(line[65:72])/1000., sd=datestr_to_dt(line[83:91]), ed=datestr_to_dt(line[92:100]),)
-    except:
-        return None
-    
+    return dict(usafid_wban='-'.join([line[0:6], line[7:12]]), name=line[13:43], state=line[49:51], lat=float(line[58:64])/1000.,
+               lon=float(line[65:72])/1000., sd=datestr_to_dt(line[83:91]), ed=datestr_to_dt(line[92:100]), flds=[])
+        
 def stn_covg(path='static/ISH-HISTORY.TXT'):
     stns = {'-'.join([line[0:6], line[7:12]]): parse_stn_line(line) for line in map(lambda x: x.strip(), open(path).readlines())}
     return {key: stns[key] for key in stns if stns[key]}
@@ -377,6 +372,10 @@ def main(args, update_stations=False):
     # Get station coverage data and flds coverage
     stns = stn_covg()
     flds_by_stn = stn_flds()
+    for _id in flds_by_stn:
+        for fld in flds_by_stn[_id]:
+            if flds_by_stn[_id][fld]:
+                stns[_id]['flds'].append(fld)
 
     # Make requests
     nprocs = None
@@ -425,4 +424,3 @@ if __name__ == "__main__":
     args = parser.parse_args()
     
     main(args)
-

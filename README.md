@@ -1,5 +1,5 @@
 ##### OVERVIEW 
-Python API to get historical data from the NOAA weather station nearest a zip code or latitude and longitude coordinates. 
+(UNFINSHED - hopefully soonish) Python API to get historical data from the NOAA weather station nearest a zip code or latitude and longitude coordinates. 
 
 ##### DEPENDENCIES 
 *NIX curl, gunzip, Java Runtime Environment / compiler, pyzipcode (if you pass zip codes instead of latitude,longitude)

@@ -111,16 +111,13 @@ class WeatherDataRequest(object):
 
         # self.dates maps:   date -> fld -> stn _id
         # when pulling the data, getting a year of each station is the bottleneck
-        # we will want to map:  stn -> date -> flds   for convenient data parsing.
-        # call this in __init__
-        #def map_stn_date_flds(self):
-        inverse = {}
+        # want to map:  stn -> date -> flds   for convenient data parsing.
+        self.stn_date_flds = {}
         for date in self.dates:
             for field in self.dates[date]:
-                if date not in inverse:
-                    inverse[date] = []
-                inverse[date].append(field)
-        self.stn_date_flds = inverse
+                if date not in self.stn_date_flds:
+                    self.stn_date_flds[date] = []
+                self.stn_date_flds[date].append(field)
     # __init__() ENDS
         
         

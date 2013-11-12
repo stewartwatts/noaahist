@@ -115,9 +115,13 @@ class WeatherDataRequest(object):
         self.stn_date_flds = {}
         for date in self.dates:
             for field in self.dates[date]:
-                if date not in self.stn_date_flds:
-                    self.stn_date_flds[date] = []
+                stn = self.dates[date][field]
+                if stn not in self.stn_date_flds:
+                    self.stn_date_flds[stn] = {}
+                if date not in self.stn_date_flds[stn]:
+                    self.stn_date_flds[stn][date] = []
                 self.stn_date_flds[date].append(field)
+
     # __init__() ENDS
         
         
@@ -129,6 +133,15 @@ class WeatherDataRequest(object):
             
     def get_response(self):
         self.response = []
+        for date in self.stn_date_flds:
+            yrs = set([])
+
+
+
+
+
+
+
         yrs = set([d.year for d in self.dates])
         for yr in yrs:
             # all dates from this year

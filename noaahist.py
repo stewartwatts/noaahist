@@ -133,15 +133,6 @@ class WeatherDataRequest(object):
             
     def get_response(self):
         self.response = []
-        for date in self.stn_date_flds:
-            yrs = set([])
-
-
-
-
-
-
-
         yrs = set([d.year for d in self.dates])
         for yr in yrs:
             # all dates from this year

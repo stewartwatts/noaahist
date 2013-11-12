@@ -2,7 +2,7 @@
 (UNFINSHED - hopefully soonish) Python API to get historical data from the NOAA weather station nearest a zip code or latitude and longitude coordinates. 
 
 ##### DEPENDENCIES 
-*NIX curl, gunzip, Java Runtime Environment / compiler, pyzipcode (if you pass zip codes instead of latitude,longitude)
+curl, gunzip, Java Runtime Environment / compiler, pyzipcode (if you pass zip codes instead of latitude,longitude)
 
 ##### DATA SOURCE 
 ftp://ftp.ncdc.noaa.gov/pub/data/noaa/  
@@ -56,7 +56,6 @@ For simple calls, pass command line arguments:
 * --lats: latitudes
 * --lons: longitudes (length and order must agree with --lats args)
 * -f, --flds: keys for the data you would like (see NOAA fields below)
-* --hrly: return hourly data instead of daily (note: hourly data is not always complete)
 * -p: automatically detect number of available processors, N, and run requests in parallel on N-1 processors
 * --nprocs: explicitly set how many processors to use (ignored if -p is passed)
 * -i, --infile: to run many requests at once, can pass in a formatted text file with one request specified per line 
@@ -67,14 +66,14 @@ Example:
 $ ./noaahist.py -d 19710321 19710323 -z 89109 --lats 34.05 34.893 --lons -118.25 -117.019 -f SPD TEMP -p --outfile fllv.txt
 ```
 
-For more complicated calls or for requests with different date ranges or many different locations, pass a pipe-delimited, formatted text file that specifies one request per line.  If the frequency is not 'h' or 'H', observation frequency will default to daily.  
+For more complicated calls or for requests with different date ranges or many different locations, pass a pipe-delimited, formatted text file that specifies one request per line. 
 
-location name | date OR start_date,end_date | zip or latitude,longitude | comma-separated weather fields | daily ('d') OR hourly ('h')
+location name | date OR start_date,end_date | zip or latitude,longitude | comma-separated weather fields
 
 Example:
 ```
-$ echo 'LasVegas|19710321,19710323|89109|SKC,TEMP|d' > reqs.txt
-$ echo 'WoodyCreek_CO|20050220|39.270833,-106.886111|SPD,SD|h' >> reqs.txt
+$ echo 'LasVegas|19710321,19710323|89109|SKC,TEMP' > reqs.txt
+$ echo 'WoodyCreek_CO|20050220|39.270833,-106.886111|SPD,SD' >> reqs.txt
 $ ./noaahist.py --infile reqs.txt
 ```
 

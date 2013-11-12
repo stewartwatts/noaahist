@@ -22,14 +22,13 @@ def run_req(req):
 
 class WeatherDataRequest(object):
     
-    def __init__(self, start_date, end_date, lat, lon, flds, freq, stns, name=None):
+    def __init__(self, start_date, end_date, lat, lon, flds, stns, name=None):
         ndays = (end_date-start_date).days
         # self.dates --> map each date to --> map each fld to a station _id
         self.dates = {date: {} for date in [end_date - dt.timedelta(days=n) for n in range(ndays,-1,-1)]}
         self.lat = float(lat)
         self.lon = float(lon)
         self.flds = flds
-        self.freq = freq
         self.name = name
         # NOAA field explanations: ftp://ftp.ncdc.noaa.gov/pub/data/noaa/ish-abbreviated.txt
         # Note: *'s IN FIELD INDICATES ELEMENT NOT REPORTED
@@ -303,7 +302,7 @@ def haversine(lat1, lon1, lat2, lon2):
 
 def req_from_infile_line(line, stns):
     try:
-        [name, dates, loc, flds, freq] = map(lambda x: x.strip(), line.strip().split("|"))
+        [name, dates, loc, flds] = map(lambda x: x.strip(), line.strip().split("|"))
     except:
         sys.exit("Error parsing infile\nExample infile:\n\nLasVegas|19710321,19710323|89109|WSPD,TEMP|d\nWoodyCreek_CO|20050220|39.270833,-106.886111|BARP,VISD|h\n\n")
     try:
@@ -315,7 +314,7 @@ def req_from_infile_line(line, stns):
     except ValueError:
         lat, lon = coords_from_zip(loc)
     flds = flds.split(',')
-    return WeatherDataRequest(sd, ed, lat, lon, flds, 'h' if freq[0].lower()=='h' else 'd', stns, name)
+    return WeatherDataRequest(sd, ed, lat, lon, flds, stns, name)
 
 def parse_stn_line(line):
     usafid_wban = '-'.join([line[0:6], line[7:12]])
@@ -396,9 +395,6 @@ def main(args, update_stations=False):
     # fields (args.flds from command line is a list, not a single comma-separated string)
     flds = args.flds 
         
-    # frequency: daily or hourly
-    freq = 'h' if args.hrly else 'd'
-
     # Get station coverage data and flds coverage
     stns = stn_covg()
     flds_by_stn = stn_flds()
@@ -410,7 +406,7 @@ def main(args, update_stations=False):
     
     # make WeatherDataRequests (no 'name' attribute will be specified for these objects)
     for i in range(len(lats)):
-        reqs.append(WeatherDataRequest(sd, ed, lats[i], lons[i], flds, freq, stns))
+        reqs.append(WeatherDataRequest(sd, ed, lats[i], lons[i], flds, stns))
     
     # Get requests from --infile arg
     if args.infile:
@@ -451,8 +447,6 @@ if __name__ == "__main__":
                         help='one or more longitudes (in same order as latitudes if multiple)')
     parser.add_argument('-f', '--flds', nargs='+', action=flds_action(),
                         help='weather data field names (see README.md or NOAA_fields in WeatherDataRequest definition)')
-    parser.add_argument('--hrly', action='store_true',
-                        help='return data with hourly frequency instead of daily')
     parser.add_argument('-p', '--parallel', action='store_true',
                         help='detect # of processors N, run data requests on N-1 procs')
     parser.add_argument('--nprocs', nargs=1, type=int,

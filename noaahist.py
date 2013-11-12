@@ -15,7 +15,7 @@ from math import radians, cos, sin, asin, sqrt
 ## Logic for handling data requests and outputting a response
 
 # multiprocessing PickleError workaround
-def run_req((req)):
+def run_req(req):
     req.get_response()
     return req.response
 
@@ -66,9 +66,7 @@ class WeatherDataRequest(object):
             'SD':    [145,147], # SNOW DEPTH IN INCHES
             }
         self.stns = stns
-        # data may be pulled from different stations for different fields or date ranges
-        # keep track of where data is coming from.
-        # station _id maps to -->  dates & flds / names / dists in miles from location
+        # station _id maps to -->  names / dists in miles from location
         self.stns_metadata = defaultdict(dict)
 
         # get mapping of date to closest station with data, by month
@@ -94,10 +92,13 @@ class WeatherDataRequest(object):
                             found = True
                             break
                     if found:
-                        self.stns_metadata[_id]['dist'] = haversine(self.lat, self.lon, stns[_id]['lat'], stns[_id]['lon'])
+                        self.dates[d][fld] = _id
+                        if _id not in self.stns_metadata:
+                            self.stns_metadata[_id]['dist'] = haversine(self.lat, self.lon, stns[_id]['lat'], stns[_id]['lon'])
+                            self.stns_metadata[_id]['name'] = self.stns['name']
                     else:
                         print "WARNING: no data found for fld=< {0} > for date=< {1} >".format(fld, "{:%Y-%m-%d}".format(d))
-            self.dates[d] = _id
+                        
                 
     def to_float(self, x):
         try:
@@ -409,7 +410,7 @@ def main(args, update_stations=False):
         # make requests in parallel
         print "making requests in parallel on < %s > processors" % str(nprocs)
         pool = Pool(processes=nprocs)
-        result = pool.map_async(run_req, [(req, stns, flds_by_stn) for req in reqs])
+        result = pool.map_async(run_req, reqs])
         resps = result.get()
     else:
         # make requests in series

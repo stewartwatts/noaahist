@@ -4,20 +4,21 @@ import os
 import sys
 import time
 import datetime as dt
-from copy import copy
+from copy import deepcopy
 from collections import defaultdict
 from calendar import monthrange
 import argparse
 from multiprocessing import Pool, cpu_count
 from subprocess import Popen, PIPE
 from math import radians, cos, sin, asin, sqrt
+import pdb
 
 ## Logic for handling data requests and outputting a response
 
 # multiprocessing PickleError workaround
 def run_req(req):
     req.get_response()
-    return req.response
+    return req.response_list
 
 class WeatherDataRequest(object):
     
@@ -33,6 +34,7 @@ class WeatherDataRequest(object):
         # NOAA field explanations: ftp://ftp.ncdc.noaa.gov/pub/data/noaa/ish-abbreviated.txt
         # Note: *'s IN FIELD INDICATES ELEMENT NOT REPORTED
         self.NOAA_fields = {
+            'HR_TIME':  [13,25], # YYYYMMDDHH
             'HR':    [21,23], # GREENWICH MEAN TIME HOUR
             'MN':    [23,25], # GREENWICH MEAN TIME MINUTES 
             'DIR':   [26,29], # WIND DIRECTION IN COMPASS DEGREES, 990 = VARIABLE, REPORTED AS '***' WHEN AIR IS CALM (SPD WILL THEN BE 000)
@@ -71,7 +73,7 @@ class WeatherDataRequest(object):
         self.stns_metadata = defaultdict(dict)
 
         # get mapping of date to closest station with data, by month
-        yr, mo, cands, usafid, actual_ids = None, None, [], None, []
+        yr, mo, cands, actual_ids = None, None, [],  []
         for d in self.dates:
             if d.year != yr or d.month != mo:
                 # some stations have gaps in data.  find stations that acutally exist for this year on NOAA's site
@@ -88,7 +90,7 @@ class WeatherDataRequest(object):
                 dist_sorted_cands = sorted(cands, key=lambda cand: haversine(self.lat, self.lon, stns[cand]['lat'], stns[cand]['lon']))
                 for fld in self.flds:
                     found = False
-                    for cand in dist_sorted_cands: 
+                    for cand in dist_sorted_cands:
                         if fld in self.stns[cand]['flds']:
                             _id = cand
                             found = True
@@ -120,38 +122,24 @@ class WeatherDataRequest(object):
                     self.stn_date_flds[stn] = {}
                 if date not in self.stn_date_flds[stn]:
                     self.stn_date_flds[stn][date] = []
-                self.stn_date_flds[date].append(field)
+                self.stn_date_flds[stn][date].append(field)
 
+        print "_" * 80
+        print self.stn_date_flds
+        print "_" * 80
     # __init__() ENDS
         
-        
-    def to_float(self, x):
-        try:
-            return float(x)
-        except:
-            return x if '*' not in x else ''
-            
+                    
     def get_response(self):
-        self.response = []
-        for date in self.stn_date_flds:
-            yrs = set([])
-
-
-
-
-
-
-
-        yrs = set([d.year for d in self.dates])
-        for yr in yrs:
-            # all dates from this year
-            yrdates = [d for d in self.dates if d.year == yr]
-            # _id of all stations for all these dates
-            stns = set([self.dates[yrd][fld] for fld in self.flds for yrd in yrdates])
-            for stn in stns:
-                # (date,field) pairs for this particular station
-                stn_dateflds = [(yrd,fld) for fld in self.dates[yrd] for yrd in yrdates if self.dates[yrd][fld] == stn]
-
+        self.response = {}
+        # loop over Request stations
+        for stn in self.stn_date_flds:
+            yrs = set([d.year for d in self.stn_date_flds[stn]])
+            # loop over years this station
+            for yr in yrs:
+                yrdates = [d for d in self.stn_date_flds[stn] if d.year == yr]
+                
+                # get the data for this stn * yr combo
                 # fetch, uncompress, reformat, and read data file from NOAA
                 url = 'ftp://ftp.ncdc.noaa.gov/pub/data/noaa/{0}/{1}-{0}.gz'.format(yr, stn)
                 print '\nretrieving url: %s ... \n' % url 
@@ -160,48 +148,36 @@ class WeatherDataRequest(object):
                 p3 = Popen(['java', '-classpath', 'static', 'ishJava'], stdin=p2.stdout, stdout=PIPE)
                 data = p3.communicate()[0].split("\n")[1:-1]
                 print '\n'
-                # filter out lines for dates/times outside the query period
-                data = [x for x in data if datestr_to_dt(x[13:21]) in [stn_dateflds[i][0] for i in range(len(stn_dateflds))]]
 
-                # df -> tuple of form (dt.date, field)
-                for df in stn_dateflds:
+                # filter out lines for dates/times outside the query period
+                data = [x for x in data if datestr_to_dt(x[13:21]) in yrdates]
+
+                # loop over each day in the Request period
+                for date in yrdates:
                     # subset to individual day of data
-                    day_data = [x for x in data if datestr_to_dt(x[13:21]) == df[0]]
+                    day_data = [x for x in data if datestr_to_dt(x[13:21]) == date]
+                    print day_data
                     # static data
-                    line = dict(DATE=''.join(map(lambda x: str(x).zfill(2), [df[0].year, df[0].month, df[0].day])),
-                                LAT=self.lat, LON=self.lon, USAFID_WBAN=stn, DIST=self.stns_metadata[stn]['dist'])
+                    line = dict(DATE=''.join(map(lambda x: str(x).zfill(2), [date.year, date.month, date.day])),
+                                LAT=self.lat, LON=self.lon, USAFID_WBAN=stn, DIST=self.stns_metadata[stn]['dist'],
+                                STN_NAME=self.stns_metadata[stn]['name'])
                     if self.name:
                         line['NAME'] = self.name
                     # hrly: separate line for each observation
-                    if self.freq == 'h':
-                        for obs in day_data:
-                            hrline = copy(line)
-                            for fld in ['HR','MN'] + self.flds:
-                                try:
-                                    hrline[fld] = self.to_float(obs[self.NOAA_fields[fld][0]:self.NOAA_fields[fld][1]])
-                                except:
-                                    hrline[fld] = None
-                            self.response.append(hrline)
-                    # daily: average observations or extract non-'***' data
-                    else:
-                        tmp = defaultdict(list)
-                        for obs in day_data:
-                            for fld in self.flds:
-                                try:
-                                    tmp[fld].append(self.to_float(obs[self.NOAA_fields[fld][0]:self.NOAA_fields[fld][1]]))
-                                except:
-                                    pass
-                        for fld in tmp:
-                            try:
-                                line[fld] = sum(tmp[fld])/len(tmp[fld])
-                            except:
-                                line[fld] = None
-                        self.response.append(line)
-        self.response = sorted(self.response, key=lambda r: r['DATE'])
-                    
+                    for obs in day_data:
+                        # index lines on YYYYMMDDHH -> one per hour
+                        hr_time = obs[self.NOAA_fields['HR_TIME'][0] : self.NOAA_fields['HR_TIME'][1]]
+                        self.response[hr_time] = deepcopy(line)
+                        for fld in ['MN'] + self.stn_date_flds[stn][date]:
+                            self.response[hr_time][fld] = obs[self.NOAA_fields[fld][0]:self.NOAA_fields[fld][1]]
+                        
+        # sort lines of response!  TODO TODO
+        hr_times = sorted(self.response.keys())
+        self.response_list = [self.response[hrt] for hrt in hr_times]
+
     def run(self):
         self.get_response()
-        return self.response
+        return self.response_list
     
 class AllWeatherResponses(object):
     def __init__(self, resp_dicts_list):
@@ -209,7 +185,10 @@ class AllWeatherResponses(object):
         self.responses = resp_dicts_list
         self.all_flds = set([key for resp in self.responses for key in resp[0].keys()])
         # make order of fields sensible
-        self.fld_names = [fld for fld in ['NAME','DATE','HR','MN','LAT','LON','USAFID_WBAN','DIST',  # metadata
+        self.fld_names = [fld for fld in ['NAME',
+                                          #'DATE','HR','MN',
+                                          'HR_TIME'
+                                          'LAT','LON', #'USAFID_WBAN','DIST',  # metadata
                                           'TEMP','MIN','MAX','DEWP',                                 # temperature
                                           'DIR','SPD','GUS',                                         # wind
                                           'PCP01','PCPXX','PCP06','PCP24','SD',                      # precipitation

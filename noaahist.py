@@ -20,6 +20,7 @@ def run_req(req):
     return req.response
 
 class WeatherDataRequest(object):
+    
     def __init__(self, start_date, end_date, lat, lon, flds, freq, stns, name=None):
         ndays = (end_date-start_date).days
         # self.dates --> map each date to --> map each fld to a station _id
@@ -82,38 +83,64 @@ class WeatherDataRequest(object):
                     actual_ids = p2.communicate()[0].split("\n")[:-1]
                 mo = d.month
                 cands = [_id for _id in self.stns if self.stns[_id]['sd'] < dt.date(yr,mo,1) and self.stns[_id]['ed'] > dt.date(yr,mo,monthrange(yr,mo)[1]) and _id in actual_ids]
-                # get closest station for this month
+                # get closest station with each field for this date
+                # first sort candidate _ids by distance to the location
                 dist_sorted_cands = sorted(cands, key=lambda cand: haversine(self.lat, self.lon, stns[cand]['lat'], stns[cand]['lon']))
                 for fld in self.flds:
                     found = False
                     for cand in dist_sorted_cands: 
-                        if fld in cand['flds']:
+                        if fld in self.stns[cand]['flds']:
                             _id = cand
                             found = True
                             break
                     if found:
+
+                        # store the station _id from which to pull data for this date * field combination
                         self.dates[d][fld] = _id
-                        if _id not in self.stns_metadata:
-                            self.stns_metadata[_id]['dist'] = haversine(self.lat, self.lon, stns[_id]['lat'], stns[_id]['lon'])
-                            self.stns_metadata[_id]['name'] = self.stns['name']
-                    else:
-                        print "WARNING: no data found for fld=< {0} > for date=< {1} >".format(fld, "{:%Y-%m-%d}".format(d))
                         
-                
+                        if _id not in self.stns_metadata:
+                            self.stns_metadata[_id]['dist'] = haversine(self.lat, self.lon, self.stns[_id]['lat'], self.stns[_id]['lon'])
+                            self.stns_metadata[_id]['name'] = self.stns[_id]['name']
+                    else:
+                        print "\n\nWARNING: no data found for fld=< {0} > for date=< {1} >\n".format(fld, "{:%Y-%m-%d}".format(d))
+                        keep_going = raw_input("Proceed anyhow? [y/n]\n")
+                        if keep_going and keep_going[0].lower() == 'y':
+                            pass
+                        else:
+                            sys.exit("noaahist.py process has been terminated.")
+
+        # self.dates maps:   date -> fld -> stn _id
+        # when pulling the data, getting a year of each station is the bottleneck
+        # we will want to map:  stn -> date -> flds   for convenient data parsing.
+        # call this in __init__
+        #def map_stn_date_flds(self):
+        inverse = {}
+        for date in self.dates:
+            for field in self.dates[date]:
+                if date not in inverse:
+                    inverse[date] = []
+                inverse[date].append(field)
+        self.stn_date_flds = inverse
+    # __init__() ENDS
+        
+        
     def to_float(self, x):
         try:
             return float(x)
         except:
             return x if '*' not in x else ''
-
+            
     def get_response(self):
         self.response = []
         yrs = set([d.year for d in self.dates])
         for yr in yrs:
+            # all dates from this year
             yrdates = [d for d in self.dates if d.year == yr]
-            stns = set([self.dates[yrd] for yrd in yrdates])
+            # _id of all stations for all these dates
+            stns = set([self.dates[yrd][fld] for fld in self.flds for yrd in yrdates])
             for stn in stns:
-                stndates = [yrd for yrd in yrdates if self.dates[yrd] == stn]
+                # (date,field) pairs for this particular station
+                stn_dateflds = [(yrd,fld) for fld in self.dates[yrd] for yrd in yrdates if self.dates[yrd][fld] == stn]
 
                 # fetch, uncompress, reformat, and read data file from NOAA
                 url = 'ftp://ftp.ncdc.noaa.gov/pub/data/noaa/{0}/{1}-{0}.gz'.format(yr, stn)
@@ -123,15 +150,16 @@ class WeatherDataRequest(object):
                 p3 = Popen(['java', '-classpath', 'static', 'ishJava'], stdin=p2.stdout, stdout=PIPE)
                 data = p3.communicate()[0].split("\n")[1:-1]
                 print '\n'
-                # filter out unneeded data
-                data = [x for x in data if datestr_to_dt(x[13:21]) in stndates]
-                
-                for stndate in stndates:
+                # filter out lines for dates/times outside the query period
+                data = [x for x in data if datestr_to_dt(x[13:21]) in [stn_dateflds[i][0] for i in range(len(stn_dateflds))]]
+
+                # df -> tuple of form (dt.date, field)
+                for df in stn_dateflds:
                     # subset to individual day of data
-                    day_data = [x for x in data if datestr_to_dt(x[13:21]) == stndate]
+                    day_data = [x for x in data if datestr_to_dt(x[13:21]) == df[0]]
                     # static data
-                    line = dict(DATE=''.join(map(lambda x: str(x).zfill(2), [stndate.year, stndate.month, stndate.day])),
-                                LAT=self.lat, LON=self.lon, USAFID_WBAN=self.dates[stndate], DIST=self.dists[self.dates[stndate]])
+                    line = dict(DATE=''.join(map(lambda x: str(x).zfill(2), [df[0].year, df[0].month, df[0].day])),
+                                LAT=self.lat, LON=self.lon, USAFID_WBAN=stn, DIST=self.stns_metadata[stn]['dist'])
                     if self.name:
                         line['NAME'] = self.name
                     # hrly: separate line for each observation
@@ -141,7 +169,7 @@ class WeatherDataRequest(object):
                             for fld in ['HR','MN'] + self.flds:
                                 try:
                                     hrline[fld] = self.to_float(obs[self.NOAA_fields[fld][0]:self.NOAA_fields[fld][1]])
-                                except :
+                                except:
                                     hrline[fld] = None
                             self.response.append(hrline)
                     # daily: average observations or extract non-'***' data
@@ -410,7 +438,7 @@ def main(args, update_stations=False):
         # make requests in parallel
         print "making requests in parallel on < %s > processors" % str(nprocs)
         pool = Pool(processes=nprocs)
-        result = pool.map_async(run_req, reqs])
+        result = pool.map_async(run_req, reqs)
         resps = result.get()
     else:
         # make requests in series

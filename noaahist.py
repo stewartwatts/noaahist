@@ -22,10 +22,10 @@ def run_req((req)):
 class WeatherDataRequest(object):
     def __init__(self, start_date, end_date, lat, lon, flds, freq, stns, name=None):
         ndays = (end_date-start_date).days
-        self.dates = {date: None for date in [end_date - dt.timedelta(days=n) for n in range(ndays,-1,-1)]}
+        # self.dates --> map each date to --> map each fld to a station _id
+        self.dates = {date: {} for date in [end_date - dt.timedelta(days=n) for n in range(ndays,-1,-1)]}
         self.lat = float(lat)
         self.lon = float(lon)
-        self.dists = {} # map closest station usafid to dist in miles from location
         self.flds = flds
         self.freq = freq
         self.name = name
@@ -66,6 +66,10 @@ class WeatherDataRequest(object):
             'SD':    [145,147], # SNOW DEPTH IN INCHES
             }
         self.stns = stns
+        # data may be pulled from different stations for different fields or date ranges
+        # keep track of where data is coming from.
+        # station _id maps to -->  dates & flds / names / dists in miles from location
+        self.stns_metadata = defaultdict(dict)
 
         # get mapping of date to closest station with data, by month
         yr, mo, cands, usafid, actual_ids = None, None, [], None, []
@@ -81,9 +85,18 @@ class WeatherDataRequest(object):
                 mo = d.month
                 cands = [_id for _id in self.stns if self.stns[_id]['sd'] < dt.date(yr,mo,1) and self.stns[_id]['ed'] > dt.date(yr,mo,monthrange(yr,mo)[1]) and _id in actual_ids]
                 # get closest station for this month
-                sort_cands = sorted(cands, key=lambda cand: haversine(self.lat, self.lon, stns[cand]['lat'], stns[cand]['lon']))
-                _id = sort_cands[0]   # TODO: for additional fields, verify the station usually has this data
-                self.dists[_id] = haversine(self.lat, self.lon, stns[_id]['lat'], stns[_id]['lon'])
+                dist_sorted_cands = sorted(cands, key=lambda cand: haversine(self.lat, self.lon, stns[cand]['lat'], stns[cand]['lon']))
+                for fld in self.flds:
+                    found = False
+                    for cand in dist_sorted_cands: 
+                        if fld in cand['flds']:
+                            _id = cand
+                            found = True
+                            break
+                    if found:
+                        self.stns_metadata[_id]['dist'] = haversine(self.lat, self.lon, stns[_id]['lat'], stns[_id]['lon'])
+                    else:
+                        print "WARNING: no data found for fld=< {0} > for date=< {1} >".format(fld, "{:%Y-%m-%d}".format(d))
             self.dates[d] = _id
                 
     def to_float(self, x):

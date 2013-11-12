@@ -270,7 +270,7 @@ def haversine(lat1, lon1, lat2, lon2):
     km = 6367 * c
     return km * 0.621371
 
-def req_from_infile_line(line):
+def req_from_infile_line(line, stns):
     try:
         [name, dates, loc, flds, freq] = map(lambda x: x.strip(), line.strip().split("|"))
     except:
@@ -284,11 +284,19 @@ def req_from_infile_line(line):
     except ValueError:
         lat, lon = coords_from_zip(loc)
     flds = flds.split(',')
-    return WeatherDataRequest(sd, ed, lat, lon, flds, 'h' if freq[0].lower()=='h' else 'd', name)
+    return WeatherDataRequest(sd, ed, lat, lon, flds, 'h' if freq[0].lower()=='h' else 'd', stns, name)
 
 def parse_stn_line(line):
-    return dict(usafid_wban='-'.join([line[0:6], line[7:12]]), name=line[13:43], state=line[49:51], lat=float(line[58:64])/1000.,
-               lon=float(line[65:72])/1000., sd=datestr_to_dt(line[83:91]), ed=datestr_to_dt(line[92:100]), flds=[])
+    usafid_wban = '-'.join([line[0:6], line[7:12]])
+    name = line[13:43].strip()
+    state = line[49:51].strip()
+    lat = float(line[58:64])/1000. if line[58:64].strip() else None
+    lon = float(line[65:72])/1000. if line[65:72].strip() else None
+    sd = datestr_to_dt(line[83:91]) if line[83:91].strip() else None
+    ed = datestr_to_dt(line[92:100]) if line[92:100].strip() else None
+    flds = []
+    if usafid_wban and lat and lon and sd and ed:
+        return dict(usafid_wban=usafid_wban, name=name, state=state, lat=lat, lon=lon, sd=sd, ed=ed, flds=flds)
         
 def stn_covg(path='static/ISH-HISTORY.TXT'):
     stns = {'-'.join([line[0:6], line[7:12]]): parse_stn_line(line) for line in map(lambda x: x.strip(), open(path).readlines())}
@@ -359,23 +367,24 @@ def main(args, update_stations=False):
         
     # frequency: daily or hourly
     freq = 'h' if args.hrly else 'd'
-    
-    # make WeatherDataRequests (no 'name' attribute will be specified for these objects)
-    for i in range(len(lats)):
-        reqs.append(WeatherDataRequest(sd, ed, lats[i], lons[i], flds, freq))
-    
-    # Get requests from --infile arg
-    if args.infile:
-        for line in map(lambda x: x.strip(), args.infile.readlines()):
-            reqs.append(req_from_infile_line(line))
 
     # Get station coverage data and flds coverage
     stns = stn_covg()
     flds_by_stn = stn_flds()
+    # annotate 'stns' with lists of fields each station contains
     for _id in flds_by_stn:
         for fld in flds_by_stn[_id]:
             if flds_by_stn[_id][fld]:
                 stns[_id]['flds'].append(fld)
+    
+    # make WeatherDataRequests (no 'name' attribute will be specified for these objects)
+    for i in range(len(lats)):
+        reqs.append(WeatherDataRequest(sd, ed, lats[i], lons[i], flds, freq, stns))
+    
+    # Get requests from --infile arg
+    if args.infile:
+        for line in map(lambda x: x.strip(), args.infile.readlines()):
+            reqs.append(req_from_infile_line(line, stns))
 
     # Make requests
     nprocs = None
@@ -392,7 +401,7 @@ def main(args, update_stations=False):
     else:
         # make requests in series
         for req in reqs:
-            resps.append(req.run(stns))
+            resps.append(req.run())
 
     # Combine and write output
     all_resp = AllWeatherResponses(resps)

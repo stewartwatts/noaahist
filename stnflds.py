@@ -172,16 +172,3 @@ if __name__ == "__main__":
     else:
         # by default, log 10 random US stations
         main(10)
-
-
-"""
-yr = 2003
-_id = '703605-99999'
-url = 'ftp://ftp.ncdc.noaa.gov/pub/data/noaa/{0}/{1}-{0}.gz'.format(yr, _id)
-print '\nretrieving stn=%s  yr=%s ... \n' % (_id, str(yr))
-p1 = Popen(["curl", url], stdout=PIPE)
-p2 = Popen(["gunzip"], stdin=p1.stdout, stdout=PIPE)
-p3 = Popen(['java', '-classpath', 'static', 'ishJava'], stdin=p2.stdout, stdout=PIPE)
-data = p3.communicate()[0].split("\n")[1:-1]
-"""
-

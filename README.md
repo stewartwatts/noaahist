@@ -80,4 +80,4 @@ $ echo 'WoodyCreek|20050220|39.270833,-106.886111|SPD,SD' >> reqs.txt
 $ ./noaahist.py --infile reqs.txt
 ```
 
-Note: location name is just for convenient grouping of results when responses are dumped together in .csv format.  It does not affect what data is pulled from NOAA.
+Note: location name, 'LasVegas' and 'WoodyCreek' in the above example, is just for convenient grouping of results when responses are dumped together in .csv format.  It does not affect what data is pulled from NOAA.  There is currently no way to set a location name for calls that don't use the --infile option.

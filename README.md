@@ -60,7 +60,7 @@ For simple calls, pass command line arguments:
 * --nprocs: explicitly set how many processors to use (ignored if -p is passed)
 * -i, --infile: to run many requests at once, can pass in a formatted text file with one request specified per line 
 * -o, --outfile: redirect comma-separated output lines (defaults to stdout)
-* -m, --metadata: feeback on which stations data was pulled from; if outfile is specified, written to <outfilename>_metadata.txt, else printed to STDOUT
+* -m, --metadata: feeback on which stations data was pulled from; if outfile is specified, written to outfilename_metadata.txt, else printed to STDOUT
 
 Example:
 ```

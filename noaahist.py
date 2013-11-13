@@ -190,7 +190,7 @@ class WeatherDataRequest(object):
         return (self.response_list, self.meta_str)
 
     def set_metastr(self):
-        pass
+        self.meta_str = "HIHI FRDS!" + "\n"
 
 class AllWeatherMetadata(object):
     def __init__(self, meta_str_list):
@@ -326,7 +326,7 @@ def req_from_infile_line(line, stns, meta):
     try:
         [name, dates, loc, flds] = map(lambda x: x.strip(), line.strip().split("|"))
     except:
-        sys.exit("Error parsing infile\nExample infile:\n\nLasVegas|19710321,19710323|89109|WSPD,TEMP|d\nWoodyCreek_CO|20050220|39.270833,-106.886111|BARP,VISD|h\n\n")
+        sys.exit("Error parsing infile\nExample infile:\n\nLasVegas|19710321,19710323|89109|WSPD,TEMP\nWoodyCreek_CO|20050220|39.270833,-106.886111|BARP,VISD\n\n")
     try:
         [sd, ed] = map(datestr_to_dt, dates.split(','))
     except ValueError:
@@ -459,11 +459,11 @@ def main(args, update_stations=False):
     if args.metadata:
         all_meta = AllWeatherMetadata([resp[1] for resp in resps])
         if args.outfile == sys.stdout:
-            print ""
+            print "\nStation Metadata:"
             all_meta.write(args.outfile)
         else:
-            metadata_filename = args.outfile.name.split('.')[0] + "metadata.txt"
-            with open(metadata_filename) as f:
+            metadata_filename = args.outfile.name.split('.')[0] + "_metadata.txt"
+            with open(metadata_filename, "w") as f:
                 all_meta.write(f)
         
 

@@ -1,5 +1,5 @@
 ##### OVERVIEW 
-(UNFINSHED - hopefully soonish) Python API to get historical data from the NOAA weather station nearest a zip code or latitude and longitude coordinates. 
+Python API to get historical data from the NOAA weather station nearest a zip code or latitude and longitude coordinates. 
 
 ##### DEPENDENCIES 
 curl, gunzip, Java Runtime Environment / compiler, pyzipcode (if you pass zip codes instead of latitude,longitude)
@@ -39,7 +39,7 @@ ftp://ftp.ncdc.noaa.gov/pub/data/noaa/
 * 'SD':    snow depth in inches
 
 ##### REFORMATTING 
-NOAA's raw files have some fixed fields and a richer set of fields with complicated, variable formatting.  NOAA provides a reformatting script which has been modified (static/ishJava.java) to work in a UNIX pipeline within noaahist.py.
+NOAA's raw files have some fixed fields and a richer set of fields with complicated, variable formatting.  NOAA provides a reformatting routine which has been modified (static/ishJava.java) to work in a UNIX pipeline within noaahist.py.
 
 ##### USAGE
 Before using this tool, you must compile static/ishJava.java.  The Java binary file you create, ishJava.class, must be in the 'static/' directory for noaahist.py to find it, so 'cd' into static/ first.
@@ -60,11 +60,14 @@ For simple calls, pass command line arguments:
 * --nprocs: explicitly set how many processors to use (ignored if -p is passed)
 * -i, --infile: to run many requests at once, can pass in a formatted text file with one request specified per line 
 * -o, --outfile: redirect comma-separated output lines (defaults to stdout)
+* -m, --metadata: feeback on which stations data was pulled from; if outfile is specified, written to <outfilename>_metadata.txt, else printed to STDOUT
 
 Example:
 ```
-$ ./noaahist.py -d 19710321 19710323 -z 89109 --lats 34.05 34.893 --lons -118.25 -117.019 -f SPD TEMP -p --outfile fllv.txt
+$ ./noaahist.py -d 19710321 19710323 -z 89109 --lats 34.05 34.893 --lons -118.25 -117.019 -f SPD TEMP -p --outfile fllv.csv -m
 ```
+
+This call will create fllv.csv with the requested NOAA weather data, as well as fllv_metadata.txt with information about the stations data was pulled from.
 
 For more complicated calls or for requests with different date ranges or many different locations, pass a pipe-delimited, formatted text file that specifies one request per line. 
 
@@ -73,7 +76,7 @@ location name | date OR start_date,end_date | zip or latitude,longitude | comma-
 Example:
 ```
 $ echo 'LasVegas|19710321,19710323|89109|SKC,TEMP' > reqs.txt
-$ echo 'WoodyCreek_CO|20050220|39.270833,-106.886111|SPD,SD' >> reqs.txt
+$ echo 'WoodyCreek|20050220|39.270833,-106.886111|SPD,SD' >> reqs.txt
 $ ./noaahist.py --infile reqs.txt
 ```
 

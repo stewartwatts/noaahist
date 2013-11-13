@@ -16,6 +16,8 @@ import pdb
 # multiprocessing PickleError workaround
 def run_req(req):
     req.get_response()
+    if req.meta:
+        req.set_metastr()
     return (req.response_list, req.meta_str)
 
 class WeatherDataRequest(object):
@@ -231,12 +233,13 @@ class WeatherDataRequest(object):
                 lines += date_ranges_to_lines(fld, stn, ranges)
         
         self.meta_str = "FLD|STATION_NAME|STATION_ID|START_DATE|END_DATE|MILES_FROM_LOC|QUERY_NAME\n"+"".join(lines) + "\n"
-
+        
 class AllWeatherMetadata(object):
     def __init__(self, meta_str_list):
         self.meta_str_list = meta_str_list
         
     def write(self, dest):
+        print "meta_str_list", repr(self.meta_str_list)
         dest.writelines(self.meta_str_list)
         
 class AllWeatherResponses(object):
@@ -372,7 +375,7 @@ def req_from_infile_line(line, stns, meta):
     except ValueError:
         sd = ed = datestr_to_dt(dates)
     try:
-        [lat, lon] = loc.split(',')
+        [lat, lon] = map(lambda x: x.strip(), loc.split(','))
     except ValueError:
         lat, lon = coords_from_zip(loc)
     flds = flds.split(',')

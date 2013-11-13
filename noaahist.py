@@ -2,11 +2,11 @@
 
 import os
 import sys
+import re
 import time
 import datetime as dt
 from copy import deepcopy
 from collections import defaultdict
-from calendar import monthrange
 import argparse
 from multiprocessing import Pool, cpu_count
 from subprocess import Popen, PIPE
@@ -33,7 +33,7 @@ class WeatherDataRequest(object):
         # NOAA field explanations: ftp://ftp.ncdc.noaa.gov/pub/data/noaa/ish-abbreviated.txt
         # Note: *'s IN FIELD INDICATES ELEMENT NOT REPORTED
         self.NOAA_fields = {
-            'HR_TIME':  [13,25], # YYYYMMDDHH
+            'HR_TIME':  [13,23], # YYYYMMDDHH
             'HR':    [21,23], # GREENWICH MEAN TIME HOUR
             'MN':    [23,25], # GREENWICH MEAN TIME MINUTES 
             'DIR':   [26,29], # WIND DIRECTION IN COMPASS DEGREES, 990 = VARIABLE, REPORTED AS '***' WHEN AIR IS CALM (SPD WILL THEN BE 000)
@@ -72,30 +72,32 @@ class WeatherDataRequest(object):
         self.stns_metadata = defaultdict(dict)
 
         # get mapping of date to closest station with data, by month
-        yr, mo, cands, actual_ids = None, None, [],  []
-        for d in self.dates:
-            if d.year != yr or d.month != mo:
+        lastdate, cand_ids, actual_ids = None, [],  []
+        for d in sorted([date for date in self.dates]):
+            if (not lastdate) or d.year != lastdate.year:
                 # some stations have gaps in data.  find stations that acutally exist for this year on NOAA's site
-                if d.year != yr:
-                    yr = d.year
-                    print "\nretrieving list of stations for year: %s ... \n" % str(yr)
-                    p1 = Popen(['curl','ftp://ftp.ncdc.noaa.gov/pub/data/noaa/%s/' % str(yr)], stdout=PIPE)
-                    p2 = Popen(['grep','-o','[0-9]\{6\}-[0-9]\{5\}'], stdin=p1.stdout, stdout=PIPE)
-                    actual_ids = p2.communicate()[0].split("\n")[:-1]
-                mo = d.month
-                cands = [_id for _id in self.stns if self.stns[_id]['sd'] < dt.date(yr,mo,1) and self.stns[_id]['ed'] > dt.date(yr,mo,monthrange(yr,mo)[1]) and _id in actual_ids]
+                print "\nretrieving list of stations for year: %s ... \n" % str(d.year)
+                p1 = Popen(['curl','ftp://ftp.ncdc.noaa.gov/pub/data/noaa/%s/' % str(d.year)], stdout=PIPE)
+                p2 = Popen(['grep','-o','[0-9]\{6\}-[0-9]\{5\}'], stdin=p1.stdout, stdout=PIPE)
+                actual_ids = p2.communicate()[0].split("\n")[:-1]
+            
+                cand_ids = [_id for _id in self.stns if
+                            self.stns[_id]['sd'] < d and
+                            self.stns[_id]['ed'] > d and
+                            _id in actual_ids]
                 # get closest station with each field for this date
                 # first sort candidate _ids by distance to the location
-                dist_sorted_cands = sorted(cands, key=lambda cand: haversine(self.lat, self.lon, stns[cand]['lat'], stns[cand]['lon']))
+                cand_ids_sorted = sorted(cand_ids, key=lambda cand_id: haversine(self.lat, self.lon,
+                                                                                 stns[cand_id]['lat'], stns[cand_id]['lon']))
                 for fld in self.flds:
                     found = False
-                    for cand in dist_sorted_cands:
-                        if fld in self.stns[cand]['flds']:
-                            _id = cand
+                    for cand_id in cand_ids_sorted:
+                        if fld in self.stns[cand_id]['flds']:
+                            _id = cand_id
                             found = True
                             break
-                    if found:
 
+                    if found:
                         # store the station _id from which to pull data for this date * field combination
                         self.dates[d][fld] = _id
                         
@@ -109,11 +111,19 @@ class WeatherDataRequest(object):
                             pass
                         else:
                             sys.exit("noaahist.py process has been terminated.")
-
+            # else clause -> triggered if we are NOT in a new year, so most of the time
+            else:
+                for fld in self.flds:
+                    self.dates[d][fld] = self.dates[lastdate][fld]
+            # store the current date in lastdate for reference later
+            lastdate = d
+                        
         # self.dates maps:   date -> fld -> stn _id
         # when pulling the data, getting a year of each station is the bottleneck
         # want to map:  stn -> date -> flds   for convenient data parsing.
         self.stn_date_flds = {}
+        print "self.dates:", self.dates
+        raw_input("--> ")
         for date in self.dates:
             for field in self.dates[date]:
                 stn = self.dates[date][field]
@@ -123,9 +133,6 @@ class WeatherDataRequest(object):
                     self.stn_date_flds[stn][date] = []
                 self.stn_date_flds[stn][date].append(field)
 
-        print "_" * 80
-        print self.stn_date_flds
-        print "_" * 80
     # __init__() ENDS
         
                     
@@ -167,8 +174,15 @@ class WeatherDataRequest(object):
                         # index lines on YYYYMMDDHH -> one per hour
                         hr_time = obs[self.NOAA_fields['HR_TIME'][0] : self.NOAA_fields['HR_TIME'][1]]
                         self.response[hr_time] = deepcopy(line)
+                        # include HR_TIME field in 'line' data
+                        self.response[hr_time]['HR_TIME'] = hr_time
                         for fld in ['MN'] + self.stn_date_flds[stn][date]:
-                            self.response[hr_time][fld] = obs[self.NOAA_fields[fld][0]:self.NOAA_fields[fld][1]]
+                            # get value and do *minimal* processing on it
+                            val = obs[self.NOAA_fields[fld][0]:self.NOAA_fields[fld][1]].strip()
+                            if len(val) == 0:
+                                val = "*"
+                            val = re.sub("\*+", "*", val)
+                            self.response[hr_time][fld] = val
                         
         # sort lines of response!  TODO TODO
         hr_times = sorted(self.response.keys())
@@ -186,7 +200,7 @@ class AllWeatherResponses(object):
         # make order of fields sensible
         self.fld_names = [fld for fld in ['NAME',
                                           #'DATE','HR','MN',
-                                          'HR_TIME'
+                                          'HR_TIME',
                                           'LAT','LON', #'USAFID_WBAN','DIST',  # metadata
                                           'TEMP','MIN','MAX','DEWP',                                 # temperature
                                           'DIR','SPD','GUS',                                         # wind
@@ -198,7 +212,8 @@ class AllWeatherResponses(object):
         self.lines = [','.join(self.fld_names) + "\n"]
         
     def format_line(self, obs_dict):
-        return ",".join(map(lambda x: str(round(x,2)) if type(x)==float else str(x), [obs_dict[fld] if obs_dict.get(fld) is not None else '' for fld in self.fld_names])) + "\n"
+        return ",".join(map(lambda x: str(round(x,2)) if type(x)==float else str(x),
+                            [obs_dict[fld] if obs_dict.get(fld) is not None else '*' for fld in self.fld_names])) + "\n"
     
     def write(self, dest):
         for resp in self.responses:

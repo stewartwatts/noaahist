@@ -162,7 +162,6 @@ class WeatherDataRequest(object):
                 for date in yrdates:
                     # subset to individual day of data
                     day_data = [x for x in data if datestr_to_dt(x[13:21]) == date]
-                    print day_data
                     # static data
                     line = dict(DATE=''.join(map(lambda x: str(x).zfill(2), [date.year, date.month, date.day])),
                                 LAT=self.lat, LON=self.lon, USAFID_WBAN=stn, DIST=self.stns_metadata[stn]['dist'],
@@ -173,10 +172,11 @@ class WeatherDataRequest(object):
                     for obs in day_data:
                         # index lines on YYYYMMDDHH -> one per hour
                         hr_time = obs[self.NOAA_fields['HR_TIME'][0] : self.NOAA_fields['HR_TIME'][1]]
-                        self.response[hr_time] = deepcopy(line)
-                        # include HR_TIME field in 'line' data
-                        self.response[hr_time]['HR_TIME'] = hr_time
-                        for fld in ['MN'] + self.stn_date_flds[stn][date]:
+                        if hr_time not in self.response:
+                            self.response[hr_time] = deepcopy(line)
+                            # include HR_TIME field in 'line' data
+                            self.response[hr_time]['HR_TIME'] = hr_time
+                        for fld in self.stn_date_flds[stn][date]:
                             # get value and do *minimal* processing on it
                             val = obs[self.NOAA_fields[fld][0]:self.NOAA_fields[fld][1]].strip()
                             if len(val) == 0:

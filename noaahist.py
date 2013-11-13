@@ -13,16 +13,14 @@ from subprocess import Popen, PIPE
 from math import radians, cos, sin, asin, sqrt
 import pdb
 
-## Logic for handling data requests and outputting a response
-
 # multiprocessing PickleError workaround
 def run_req(req):
     req.get_response()
-    return req.response_list
+    return (req.response_list, req.meta_str)
 
 class WeatherDataRequest(object):
     
-    def __init__(self, start_date, end_date, lat, lon, flds, stns, name=None):
+    def __init__(self, start_date, end_date, lat, lon, flds, stns, meta, name=None):
         ndays = (end_date-start_date).days
         # self.dates --> map each date to --> map each fld to a station _id
         self.dates = {date: {} for date in [end_date - dt.timedelta(days=n) for n in range(ndays,-1,-1)]}
@@ -31,7 +29,7 @@ class WeatherDataRequest(object):
         self.flds = flds
         self.name = name
         # NOAA field explanations: ftp://ftp.ncdc.noaa.gov/pub/data/noaa/ish-abbreviated.txt
-        # Note: *'s IN FIELD INDICATES ELEMENT NOT REPORTED
+        # *'s IN FIELD INDICATES ELEMENT NOT REPORTED
         self.NOAA_fields = {
             'HR_TIME':  [13,23], # YYYYMMDDHH
             'HR':    [21,23], # GREENWICH MEAN TIME HOUR
@@ -68,6 +66,8 @@ class WeatherDataRequest(object):
             'SD':    [145,147], # SNOW DEPTH IN INCHES
             }
         self.stns = stns
+        self.meta = meta  # flag for whether to get metadata
+        self.meta_str = None
         # station _id maps to -->  names / dists in miles from location
         self.stns_metadata = defaultdict(dict)
 
@@ -122,8 +122,6 @@ class WeatherDataRequest(object):
         # when pulling the data, getting a year of each station is the bottleneck
         # want to map:  stn -> date -> flds   for convenient data parsing.
         self.stn_date_flds = {}
-        print "self.dates:", self.dates
-        raw_input("--> ")
         for date in self.dates:
             for field in self.dates[date]:
                 stn = self.dates[date][field]
@@ -132,9 +130,7 @@ class WeatherDataRequest(object):
                 if date not in self.stn_date_flds[stn]:
                     self.stn_date_flds[stn][date] = []
                 self.stn_date_flds[stn][date].append(field)
-
     # __init__() ENDS
-        
                     
     def get_response(self):
         self.response = {}
@@ -184,14 +180,25 @@ class WeatherDataRequest(object):
                             val = re.sub("\*+", "*", val)
                             self.response[hr_time][fld] = val
                         
-        # sort lines of response!  TODO TODO
         hr_times = sorted(self.response.keys())
         self.response_list = [self.response[hrt] for hrt in hr_times]
 
     def run(self):
         self.get_response()
-        return self.response_list
-    
+        if self.meta:
+            self.set_metastr()
+        return (self.response_list, self.meta_str)
+
+    def set_metastr(self):
+        pass
+
+class AllWeatherMetadata(object):
+    def __init__(self, meta_str_list):
+        self.meta_str_list = meta_str_list
+        
+    def write(self, dest):
+        dest.writelines(self.meta_str_list)
+        
 class AllWeatherResponses(object):
     def __init__(self, resp_dicts_list):
         # response: dict(req_lat:lat_tuple, req_lon:lon_tuple, stn_dist:dist_tuple, dates:date_tuple, fld1:fld1_tuple, ...)
@@ -214,7 +221,7 @@ class AllWeatherResponses(object):
     def format_line(self, obs_dict):
         return ",".join(map(lambda x: str(round(x,2)) if type(x)==float else str(x),
                             [obs_dict[fld] if obs_dict.get(fld) is not None else '*' for fld in self.fld_names])) + "\n"
-    
+
     def write(self, dest):
         for resp in self.responses:
             self.lines += map(self.format_line, resp)
@@ -293,7 +300,7 @@ def flds_action():
             setattr(args, self.dest, values)
     return FldsArgsAction
 
-## General helper functions 
+## helper functions 
 def datestr_to_dt(datestr):
     return dt.date(*map(int, [datestr[:4], datestr[4:6], datestr[6:8]]))
 
@@ -315,7 +322,7 @@ def haversine(lat1, lon1, lat2, lon2):
     km = 6367 * c
     return km * 0.621371
 
-def req_from_infile_line(line, stns):
+def req_from_infile_line(line, stns, meta):
     try:
         [name, dates, loc, flds] = map(lambda x: x.strip(), line.strip().split("|"))
     except:
@@ -329,7 +336,7 @@ def req_from_infile_line(line, stns):
     except ValueError:
         lat, lon = coords_from_zip(loc)
     flds = flds.split(',')
-    return WeatherDataRequest(sd, ed, lat, lon, flds, stns, name)
+    return WeatherDataRequest(sd, ed, lat, lon, flds, stns, meta, name)
 
 def parse_stn_line(line):
     usafid_wban = '-'.join([line[0:6], line[7:12]])
@@ -418,15 +425,15 @@ def main(args, update_stations=False):
         for fld in flds_by_stn[_id]:
             if flds_by_stn[_id][fld]:
                 stns[_id]['flds'].append(fld)
-    
+                
     # make WeatherDataRequests (no 'name' attribute will be specified for these objects)
     for i in range(len(lats)):
-        reqs.append(WeatherDataRequest(sd, ed, lats[i], lons[i], flds, stns))
+        reqs.append(WeatherDataRequest(sd, ed, lats[i], lons[i], flds, stns, args.metadata))
     
     # Get requests from --infile arg
     if args.infile:
         for line in map(lambda x: x.strip(), args.infile.readlines()):
-            reqs.append(req_from_infile_line(line, stns))
+            reqs.append(req_from_infile_line(line, stns, args.metadata))
 
     # Make requests
     nprocs = None
@@ -446,9 +453,19 @@ def main(args, update_stations=False):
             resps.append(req.run())
 
     # Combine and write output
-    all_resp = AllWeatherResponses(resps)
+    all_resp = AllWeatherResponses([resp[0] for resp in resps])
     all_resp.write(args.outfile)
-    
+
+    if args.metadata:
+        all_meta = AllWeatherMetadata([resp[1] for resp in resps])
+        if args.outfile == sys.stdout:
+            print ""
+            all_meta.write(args.outfile)
+        else:
+            metadata_filename = args.outfile.name.split('.')[0] + "metadata.txt"
+            with open(metadata_filename) as f:
+                all_meta.write(f)
+        
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(prog='./noaahist.py')
@@ -470,6 +487,8 @@ if __name__ == "__main__":
                         help='pipe-delimited file with fmt: zip OR lat,lon | date OR startdate,enddate | field1,field2,...')
     parser.add_argument('-o', '--outfile', nargs='?', type=argparse.FileType('w'), default=sys.stdout,
                         help='direct output to a file')
+    parser.add_argument('-m', '--metadata', action='store_true',
+                        help='write metadata about stations data comes from to stdout or <outfilename>_metadata.txt')
     args = parser.parse_args()
-    
+
     main(args)

@@ -190,7 +190,47 @@ class WeatherDataRequest(object):
         return (self.response_list, self.meta_str)
 
     def set_metastr(self):
-        self.meta_str = "HIHI FRDS!" + "\n"
+        def reduce_dates(dates):
+            dates.sort()
+            ranges = [[dates[0]]]
+            rng_index = 0
+            for i, date in enumerate(dates[1:]):
+                if dates[i] == date+dt.timedelta(days=-1):
+                    ranges[rng_index].append(date)
+                else:
+                    ranges.append([date])
+            # return [(sd0, ed0), ..., (sdN, edN)] range tuples
+            return [("{:%Y%m%d}".format(rng[0]), "{:%Y%m%d}".format(rng[-1])) for rng in ranges]
+
+        # get FLD -> STN -> [DATES] mapping
+        fld_stn_dates = {}
+        for date in self.dates:
+            for fld in self.dates[date]:
+                stn = self.dates[date][fld]
+                if fld not in fld_stn_dates:
+                    fld_stn_dates[fld] = {}
+                if stn not in fld_stn_dates[fld]:
+                    fld_stn_dates[fld][stn] = []
+                fld_stn_dates[fld][stn].append(date)
+                    
+        # reduce FLD -> STN -> [DATES] leafs into date *range tuples*
+        for fld in fld_stn_dates:
+            for stn in fld_stn_dates[fld]:
+                fld_stn_dates[fld][stn] = reduce_dates(fld_stn_dates[fld][stn])
+
+        def date_ranges_to_lines(fld, stn, ranges):
+            stem = "|".join([fld, self.stns[stn]['name'], stn, "%s|%s",
+                             str(self.stns_metadata[stn]['dist']), self.name if self.name else '-']) + "\n"
+            return [stem % rng for rng in ranges]
+                
+        # FLD | STN_NAME | STARTDATE | ENDDATE | DIST_TO_LOC
+        lines = []
+        for fld in fld_stn_dates:
+            for stn in fld_stn_dates[fld]:
+                ranges = fld_stn_dates[fld][stn]
+                lines += date_ranges_to_lines(fld, stn, ranges)
+        
+        self.meta_str = "FLD|STATION_NAME|STATION_ID|START_DATE|END_DATE|MILES_FROM_LOC|QUERY_NAME\n"+"".join(lines) + "\n"
 
 class AllWeatherMetadata(object):
     def __init__(self, meta_str_list):
@@ -459,10 +499,15 @@ def main(args, update_stations=False):
     if args.metadata:
         all_meta = AllWeatherMetadata([resp[1] for resp in resps])
         if args.outfile == sys.stdout:
-            print "\nStation Metadata:"
+            print "\nStation Metadata:\n"
             all_meta.write(args.outfile)
         else:
-            metadata_filename = args.outfile.name.split('.')[0] + "_metadata.txt"
+            # sensible naming for metadata file
+            out_fn = args.outfile.name
+            if '.' in out_fn:
+                metadata_filename = ".".join(out_fn.split('.')[:-1]) + "_metadata.txt"
+            else:
+                metadata_filename = out_fn + "_metadata.txt"
             with open(metadata_filename, "w") as f:
                 all_meta.write(f)
         

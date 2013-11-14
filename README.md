@@ -83,14 +83,14 @@ $ ./noaahist.py --infile reqs.txt -p -m
 This example *does* use a zipcode, so it will fail if the pyzipcode module is not available.  Substitute a latitude and longitude for "89109" to work around that dependency. The location names, 'LasVegas' and 'WoodyCreek', are just for convenient grouping of the returned csv-formatted data.  They do not affect what data is pulled from NOAA.  There is currently no way to set a location name for calls that don't use the --infile option.
 
 ##### OTHER TOOLS
-In many cases, NOAA's weather data coverage is sparse, and noaahist.py may not find data for a location.  To dig further interactively, explore_stations.py contains functions list the active stations closest to a location in a given year.
+In many cases, NOAA's weather data coverage is sparse, and noaahist.py may not find data for a weather category near a location.  To dig further interactively, explore_stations.py contains functions that list the active stations closest to a location in a given year.
 
 ```
 >>> from explore_stations import *
 >>> stns_with_fld("TEMP", 38.9, -77.0, 2013)"""
 ```
 
-To pull data from this station over a date range, use data_from_station.py from the command line.  All the command line args are required.
+To pull data from a given station and date range, call data_from_station.py from the command line.  All the command line args are required.
 
 * -n, --queryname: for convenient grouping of returned data
 * -i, --stn_id: the USAF ID of the station from which to pull data

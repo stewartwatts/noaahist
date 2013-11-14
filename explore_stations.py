@@ -1,4 +1,4 @@
-from noaahist import stn_covg, stn_flds, haversine, coords_from_zip, datestr_to_dt
+from noaahist import stn_covg, stn_flds, haversine, coords_from_zip
 
 # load data about stations
 stns = stn_covg()
@@ -52,7 +52,7 @@ def stns_near_zip(zip, year, N=20, id_filter=None):
 def stns_with_fld(fld, latitude, longitude, year, N=20):
     valid_flds = ['TEMP','MIN','MAX','DEWP','DIR','SPD','GUS','PCP01','PCPXX','PCP06','PCP24','SD','SKC',
                   'CLG','L','M','H','AW1','AW2','AW3','AW4','MW1','MW2','MW3','MW4','SLP','STP','ALT','VSB','W',]
-    assert fld in valid_flds, "the fld argument is not among the valid fields: %s" % ",".join(valid_flds)
+    assert fld in valid_flds, "the fld argument is not among the valid fields: %s" % ", ".join(valid_flds)
     def filter_ids(stn_ids):
         return [x for x in stn_ids if fld in stns[x]['flds']]
     stns_near_lat_lon(latitude, longitude, year, N, filter_ids)

@@ -77,7 +77,7 @@ Example:
 ```
 $ echo 'LasVegas|19710321,19710323|89109|SKC,TEMP' > reqs.txt
 $ echo 'WoodyCreek|20050220|39.270833,-106.886111|SPD,SD' >> reqs.txt
-$ ./noaahist.py --infile reqs.txt
+$ ./noaahist.py --infile reqs.txt -p -m
 ```
 
 This example *does* use a zipcode, so it will fail if the pyzipcode module is not available.  Substitute a latitude and longitude for "89109" to work around that dependency. The location names, 'LasVegas' and 'WoodyCreek', are just for convenient grouping of the returned csv-formatted data.  They do not affect what data is pulled from NOAA.  There is currently no way to set a location name for calls that don't use the --infile option.

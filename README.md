@@ -58,7 +58,7 @@ For simple calls, pass command line arguments:
 * -f, --flds: keys for the data you would like (see NOAA fields below)
 * -p: automatically detect number of available processors, N, and run requests in parallel on N-1 processors
 * --nprocs: explicitly set how many processors to use (ignored if -p is passed)
-* -i, --infile: to run many requests at once, can pass in a formatted text file with one request specified per line 
+* -i, --infile: to run many requests at once, pass in a formatted text file with one request specified per line 
 * -o, --outfile: redirect comma-separated output lines (defaults to stdout)
 * -m, --metadata: feeback on which stations data was pulled from; if outfile is specified, written to outfilename_metadata.txt, else printed to STDOUT
 
@@ -77,7 +77,7 @@ Example:
 ```
 $ echo 'LasVegas|19710321,19710323|89109|SKC,TEMP' > reqs.txt
 $ echo 'WoodyCreek|20050220|39.270833,-106.886111|SPD,SD' >> reqs.txt
-$ ./noaahist.py --infile reqs.txt
+$ ./noaahist.py --infile reqs.txt -p -m
 ```
 
-Note: location name, 'LasVegas' and 'WoodyCreek' in the above example, is just for convenient grouping of results when responses are dumped together in .csv format.  It does not affect what data is pulled from NOAA.  There is currently no way to set a location name for calls that don't use the --infile option.
+This example *does* use a zipcode, so it will fail if the pyzipcode module is not available.  Substitute a latitude and longitude for "89109" to work around that dependency. The location names, 'LasVegas' and 'WoodyCreek', are just for convenient grouping of the returned csv-formatted data.  They do not affect what data is pulled from NOAA.  There is currently no way to set a location name for calls that don't use the --infile option.

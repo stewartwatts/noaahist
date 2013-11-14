@@ -11,7 +11,6 @@ import argparse
 from multiprocessing import Pool, cpu_count
 from subprocess import Popen, PIPE
 from math import radians, cos, sin, asin, sqrt
-import pdb
 
 # multiprocessing PickleError workaround
 def run_req(req):
@@ -21,7 +20,6 @@ def run_req(req):
     return (req.response_list, req.meta_str)
 
 class WeatherDataRequest(object):
-    
     def __init__(self, start_date, end_date, lat, lon, flds, stns, meta, name=None):
         ndays = (end_date-start_date).days
         # self.dates --> map each date to --> map each fld to a station _id
@@ -225,7 +223,7 @@ class WeatherDataRequest(object):
                              str(self.stns_metadata[stn]['dist']), self.name if self.name else '-']) + "\n"
             return [stem % rng for rng in ranges]
                 
-        # FLD | STN_NAME | STARTDATE | ENDDATE | DIST_TO_LOC
+        # create meta_str
         lines = []
         for fld in fld_stn_dates:
             for stn in fld_stn_dates[fld]:
@@ -239,7 +237,6 @@ class AllWeatherMetadata(object):
         self.meta_str_list = meta_str_list
         
     def write(self, dest):
-        print "meta_str_list", repr(self.meta_str_list)
         dest.writelines(self.meta_str_list)
         
 class AllWeatherResponses(object):
@@ -248,16 +245,14 @@ class AllWeatherResponses(object):
         self.responses = resp_dicts_list
         self.all_flds = set([key for resp in self.responses for key in resp[0].keys()])
         # make order of fields sensible
-        self.fld_names = [fld for fld in ['NAME',
-                                          #'DATE','HR','MN',
-                                          'HR_TIME',
-                                          'LAT','LON', #'USAFID_WBAN','DIST',  # metadata
-                                          'TEMP','MIN','MAX','DEWP',                                 # temperature
-                                          'DIR','SPD','GUS',                                         # wind
-                                          'PCP01','PCPXX','PCP06','PCP24','SD',                      # precipitation
-                                          'SKC','CLG','L','M','H',                                   # sky conditions
-                                          'AW1','AW2','AW3','AW4','MW1','MW2','MW3','MW4',           # see table
-                                          'SLP','STP',                                               # pressure
+        self.fld_names = [fld for fld in ['NAME','HR_TIME',
+                                          'LAT','LON',                                        # metadata
+                                          'TEMP','MIN','MAX','DEWP',                          # temperature
+                                          'DIR','SPD','GUS',                                  # wind
+                                          'PCP01','PCPXX','PCP06','PCP24','SD',               # precipitation
+                                          'SKC','CLG','L','M','H',                            # sky conditions
+                                          'AW1','AW2','AW3','AW4','MW1','MW2','MW3','MW4',    # see table
+                                          'SLP','STP',                                        # pressure
                                           'ALT','VSB', 'W',] if fld in self.all_flds]
         self.lines = [','.join(self.fld_names) + "\n"]
         

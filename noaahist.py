@@ -223,7 +223,7 @@ class WeatherDataRequest(object):
                              str(self.stns_metadata[stn]['dist']), self.name if self.name else '-']) + "\n"
             return [stem % rng for rng in ranges]
                 
-        # FLD | STN_NAME | STARTDATE | ENDDATE | DIST_TO_LOC
+        # create meta_str
         lines = []
         for fld in fld_stn_dates:
             for stn in fld_stn_dates[fld]:

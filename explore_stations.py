@@ -16,7 +16,7 @@ def stns_near_lat_lon(latitude, longitude, year, N=20, id_filter=None):
     N: int -> number of desired results
     id_filter: function that returns station ids filtered on some condition
 
-    displays information about the N closest stations
+    displays information about the N closest stations to the given coordinates
     """
     latitude = float(latitude)
     longitude = float(longitude)
@@ -40,7 +40,7 @@ def stns_near_lat_lon(latitude, longitude, year, N=20, id_filter=None):
     if len(lines) > 1:
         print "".join(lines)
     else:
-        print "No stations were found that matched."
+        print "No stations were found that matched these criteria."
 
 def stns_near_zip(zip, year, N=20, id_filter=None):
     try:
@@ -60,7 +60,7 @@ def stns_with_fld(fld, latitude, longitude, year, N=20):
 def stns_with_fld_zip(fld, zip, year, N=20):
     try:
         (lat, lon) = coords_from_zip(zip)
-        stns_with_fld(fld, lat, lon, year, N, id_filter)
+        stns_with_fld(fld, lat, lon, year, N)
     except ImportError:
         print "pyzipcode is not available -> try using stns_near_lat_lon()"
 
@@ -68,3 +68,6 @@ if __name__ == "__main__":
     print "This module is for interactive exploration."
     print "Find weather stations near a location, optionally requesting that a certain field is likely to be present."
     print "There are no guarantees that the data for any field will exist.  Data observations are sparse in many cases."
+    print """Example:
+ >>> from explore_stations import *
+ >>> stns_with_fld("TEMP", 38.9, -77.0, 2013)"""

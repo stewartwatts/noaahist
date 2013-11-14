@@ -2,7 +2,6 @@
 
 import datetime as dt
 import argparse
-from copy import deepcopy
 from subprocess import Popen, PIPE
 import re
 

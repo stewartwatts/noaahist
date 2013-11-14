@@ -85,9 +85,9 @@ This example *does* use a zipcode, so it will fail if the pyzipcode module is no
 ##### OTHER TOOLS
 In many cases, NOAA's weather data coverage is sparse, and noaahist.py may not find data for a weather category near a location.  To dig further interactively, explore_stations.py contains functions that list the active stations closest to a location in a given year.
 
-```
+```python
 >>> from explore_stations import *
->>> stns_with_fld("TEMP", 38.9, -77.0, 2013)"""
+>>> stns_with_fld("TEMP", 38.9, -77.0, 2013)
 ```
 
 To pull data from a given station and date range, call data_from_station.py from the command line.  All the command line args are required.

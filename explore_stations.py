@@ -26,8 +26,8 @@ def stns_near_lat_lon(latitude, longitude, year, N=20, id_filter=None):
     def show_stn(stn_id, rank):
         d = stns[stn_id]
         info_str = " ".join([(str(rank)+".").ljust(3),
-                         stn_id.ljust(12),
-                         stns[stn_id]['name'].ljust(30),
+                             stn_id.ljust(12),
+                             stns[stn_id]['name'].ljust(30),
                              stns[stn_id]['state'].ljust(4),
                              str(round(haversine(latitude, longitude, stns[stn_id]['lat'], stns[stn_id]['lon']), 1))]) + "\n"
         return info_str
